@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Map - Empire Game</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Barlow Condensed', sans-serif;
+            background: #0a0614;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Outer stage fills viewport */
+        .stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ================================================================
+           MAP CANVAS — aspect-locked wrapper (2436 × 1125 = ~2.165:1)
+           Labels positioned in % map directly to the image's pixel space.
+           Image and labels scale together; no drift on resize.
+           ================================================================ */
+        .map-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            aspect-ratio: 2436 / 1125;
+            width: 100%;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        @media (min-aspect-ratio: 2436/1125) {
+            .map-canvas { width: auto; height: 100%; }
+        }
+
+        .map-background {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            user-select: none;
+            -webkit-user-drag: none;
+            transition: opacity 0.7s ease, transform 0.7s ease;
+            transform-origin: 30% 50%; /* zoom toward Empire */
+        }
+
+        /* Zoom-out view (default) — visible at start */
+        .bg-zoom-out { opacity: 1; transform: scale(1); }
+        .bg-zoom-in  { opacity: 0; transform: scale(0.7); }
+
+        /* When zoomed in, swap the layers */
+        .map-canvas[data-zoom="in"] .bg-zoom-out { opacity: 0; transform: scale(1.5); }
+        .map-canvas[data-zoom="in"] .bg-zoom-in  { opacity: 1; transform: scale(1); }
+
+        /* Hide zoom-out labels/regions when zoomed in */
+        .map-canvas[data-zoom="in"] .label[data-zoom="out"],
+        .map-canvas[data-zoom="in"] .tap-region[data-zoom="out"] {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Hide zoom-in labels/regions when zoomed out */
+        .map-canvas[data-zoom="out"] .label[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .tap-region[data-zoom="in"] {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .label, .tap-region {
+            transition: opacity 0.5s ease;
+        }
+
+        /* ================================================================
+           ISLAND LABELS — anchored to detected outline centers
+           Each label is centered (translate -50%/-50%) on its position.
+           ================================================================ */
+        .label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
+            padding: 4px 14px;
+            font-size: clamp(10px, 1.1vw, 16px);
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+            z-index: 10;
+        }
+
+        /* Centers detected via outline-color analysis of the background */
+        .label-empire       { left: 36.7%; top: 49.2%; }
+        .label-expedition   { left: 61.9%; top: 47.9%; }
+        .label-ravagers     { left: 50.0%; top: 27.4%; }
+        .label-pve          { left: 58.7%; top: 16.4%; }
+        .label-mines-1      { left:  6.9%; top: 61.3%; }
+        .label-mines-2      { left: 27.3%; top: 81.4%; }
+        .label-mines-3      { left: 83.0%; top: 30.4%; }
+        .label-mines-4      { left: 75.5%; top: 77.9%; }
+        .label-pvp-1        { left: 23.3%; top: 30.1%; }
+        .label-pvp-2        { left: 51.3%; top: 67.0%; }
+        .label-pvp-3        { left: 55.3%; top: 83.9%; }
+
+        /* ================================================================
+           HUD ELEMENTS — positioned relative to the map canvas
+           They scale proportionally with the map.
+           ================================================================ */
+
+        /* TOP-LEFT: Player profile */
+        .player-profile {
+            position: absolute;
+            top: 1.8%;
+            left: 1.2%;
+            display: flex;
+            align-items: center;
+            gap: 1%;
+            z-index: 50;
+        }
+
+        .player-avatar {
+            width: clamp(50px, 5.5vw, 80px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 3px solid #dd5be5;
+            overflow: hidden;
+            box-shadow: 0 0 16px rgba(221, 91, 229, 0.6);
+            flex-shrink: 0;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-info { display: flex; flex-direction: column; gap: 3px; }
+
+        .player-name {
+            font-size: clamp(12px, 1.2vw, 18px);
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .progress-bar {
+            width: clamp(110px, 11vw, 180px);
+            height: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 60%;
+            background: linear-gradient(90deg, #dd5be5, #ff6bff);
+            border-radius: 3px;
+        }
+
+        .player-level { display: flex; align-items: baseline; gap: 3px; }
+
+        .level-label {
+            font-size: clamp(9px, 0.8vw, 12px);
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        .level-num {
+            font-size: clamp(13px, 1.3vw, 18px);
+            font-weight: 900;
+            font-style: italic;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        /* TOP-RIGHT: Resources */
+        .resources {
+            position: absolute;
+            top: 2%;
+            right: 1.2%;
+            display: flex;
+            gap: 15px;
+            z-index: 50;
+        }
+
+        .resource {
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: clamp(22px, 2.2vw, 34px);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 6px;
+            padding-left: clamp(29px, 2.9vw, 44px);
+            padding-right: clamp(8px, 1vw, 12px);
+        }
+
+        .resource img {
+            position: absolute;
+            left: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: clamp(29px, 2.9vw, 44px);
+            height: clamp(29px, 2.9vw, 44px);
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+        }
+
+        .resource span {
+            font-size: clamp(14px, 1.4vw, 22px);
+            font-weight: 700;
+            color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        /* HUD Buttons (circular) */
+        .hud-btn {
+            position: absolute;
+            width: clamp(50px, 5vw, 72px);
+            aspect-ratio: 1;
+            background: radial-gradient(circle at 30% 30%, #4a3070, #2a1850);
+            border: 3px solid #dd5be5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            z-index: 40;
+            transition: transform 0.2s;
+        }
+
+        .hud-btn:hover { transform: scale(1.08); }
+
+        .hud-btn-large {
+            width: clamp(70px, 7vw, 100px);
+        }
+
+        .hud-btn-label {
+            font-size: clamp(9px, 0.85vw, 13px);
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            line-height: 1.05;
+            padding: 0 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        .hud-btn-large .hud-btn-label {
+            font-size: clamp(11px, 1vw, 15px);
+        }
+
+        .pip {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: clamp(8px, 0.7vw, 12px);
+            height: clamp(8px, 0.7vw, 12px);
+            background: #ff3366;
+            border: 2px solid #fff;
+            border-radius: 50%;
+        }
+
+        /* Button positions (% of map canvas) */
+        .btn-empire-summary  { top: 20%; left: 1.5%; }
+        .btn-conquest-guide  { top: 30%; left: 1.5%; }
+        .btn-buildings       { bottom: 6%; left: 9%; }
+        .btn-offers          { top: 20%; right: 1.5%; }
+        .btn-store           { top: 30%; right: 1.5%; }
+        .btn-summon          { bottom: 6%; right: 1.5%; }
+
+        /* Heroes (large flame icon) */
+        .heroes {
+            position: absolute;
+            bottom: 4%;
+            left: 1.2%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 40;
+            cursor: pointer;
+        }
+
+        .heroes img {
+            width: clamp(75px, 8.75vw, 125px);
+            height: clamp(75px, 8.75vw, 125px);
+            object-fit: contain;
+            filter: drop-shadow(0 0 14px rgba(255, 165, 0, 0.7));
+        }
+
+        .heroes-label {
+            font-size: clamp(10px, 1vw, 14px);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+            margin-top: -20px;
+        }
+
+        /* ================================================================
+           ISLAND TAP REGIONS — invisible clickable overlays
+           ================================================================ */
+        .tap-region {
+            position: absolute;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            z-index: 15;
+            transition: filter 0.2s;
+        }
+
+        .tap-region:hover {
+            filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+        }
+
+        .tap-region:active {
+            transform: scale(0.98);
+            transform-origin: center;
+        }
+
+        /* Empire bbox in zoom-out view: (591,321)-(1196,787) in 2436x1125 space */
+        .tap-empire {
+            left: 24.3%;
+            top: 28.5%;
+            width: 24.8%;
+            height: 41.4%;
+        }
+
+        /* Empire bbox in zoom-in view: large green island, occupies left-center */
+        .tap-empire-zoomed {
+            left: 8%;
+            top: 12%;
+            width: 42%;
+            height: 80%;
+        }
+
+        /* === Zoom-in label positions === */
+        /* EMPIRE label sits BELOW the Capital City label, both stacked */
+        .label-empire-z      { left: calc(32% - 20px); top: calc(50% + 20px); }
+        .label-ravagers-z    { left: calc(53% - 50px); top: calc(38% - 20px); }
+        .label-expedition-z  { left: calc(80% - 40px); top: calc(65% - 30px); }
+        .label-pve-z         { left: 92%; top: 5%; }
+
+        /* === Zoom-in island UI: structures, monsters, badges === */
+        .map-prop {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.5s ease, transform 0.2s ease;
+            z-index: 12;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .map-prop:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            filter: brightness(1.15);
+        }
+
+        .map-prop img {
+            display: block;
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+            pointer-events: none;
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        /* Capital City structure (Empire) — sits on the mountain peak */
+        .prop-capital-city {
+            left: calc(32% - 30px);
+            top: 28%;
+            width: clamp(70px, 9vw, 130px);
+        }
+
+        /* Tower props */
+        .prop-tower {
+            width: clamp(40px, 5vw, 75px);
+        }
+
+        .prop-tower-ravagers   { left: calc(53% - 50px); top: 18%; }
+        .prop-tower-expedition { left: calc(80% - 40px); top: calc(50% - 20px); }
+
+        /* Roaming monsters on Empire */
+        .prop-monster {
+            width: clamp(30px, 3.5vw, 55px);
+            opacity: 0.95;
+        }
+
+        .monster-1 { left: 14%; top: 58%; }
+        .monster-2 { left: 28%; top: 75%; }
+        .monster-3 { left: 35%; top: 48%; }
+        .monster-4 { left: 42%; top: 72%; }
+
+        /* Score badges (e.g., 24/24) — small pill with PVP icon + count */
+        .score-badge {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid rgba(255, 200, 50, 0.5);
+            border-radius: 6px;
+            padding: 3px 10px 3px 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.5s ease;
+            z-index: 13;
+            pointer-events: none;
+        }
+
+        .score-badge .badge-icon {
+            width: clamp(18px, 1.8vw, 24px);
+            height: clamp(18px, 1.8vw, 24px);
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+        }
+
+        .score-badge span {
+            font-size: clamp(11px, 1.1vw, 16px);
+            font-weight: 700;
+            color: #fffbe4;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+            white-space: nowrap;
+        }
+
+        .badge-ravagers   { left: calc(53% - 50px); top: 25%; }
+        .badge-expedition { left: calc(80% - 40px); top: calc(56% - 20px); }
+
+        /* Capital City label — sits ABOVE the EMPIRE label (stacked) */
+        .capital-city-label {
+            position: absolute;
+            left: calc(32% - 30px);
+            top: calc(44% - 70px);
+            transform: translate(-50%, -50%);
+            font-size: clamp(11px, 1.1vw, 16px);
+            font-weight: 700;
+            color: #fff5b8;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+            white-space: nowrap;
+            z-index: 13;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        /* Banner row above Capital City — boss/dungeon/fuel banners with notification pips
+           Positioned so their drop shadows slightly overlap the dome at the top of the castle */
+        .banner-row {
+            position: absolute;
+            left: calc(32% - 30px);
+            top: 21%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: clamp(6px, 0.6vw, 10px);
+            transition: opacity 0.5s ease;
+            z-index: 14;
+            pointer-events: none;
+        }
+
+        .banner-item {
+            position: relative;
+            width: clamp(28px, 2.8vw, 42px);
+            height: clamp(28px, 2.8vw, 42px);
+        }
+
+        .banner-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+        }
+
+        .banner-pip {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: clamp(10px, 1vw, 14px);
+            height: clamp(10px, 1vw, 14px);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+        }
+
+        /* Single banner above a tower (Ravagers / Expedition) — same scale as banner-row items */
+        .tower-banner {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: clamp(28px, 2.8vw, 42px);
+            height: clamp(28px, 2.8vw, 42px);
+            transition: opacity 0.5s ease;
+            z-index: 14;
+            pointer-events: none;
+        }
+
+        .tower-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+        }
+
+        .tower-banner-ravagers   { left: calc(53% - 50px); top: calc(13% - 10px); }
+        .tower-banner-expedition { left: calc(80% - 40px); top: calc(43% - 20px); }
+
+        /* Floating "!" alert badge (far right) */
+        .alert-pip {
+            position: absolute;
+            left: 96%;
+            top: 25%;
+            transform: translate(-50%, -50%);
+            width: clamp(20px, 2vw, 30px);
+            height: clamp(20px, 2vw, 30px);
+            transition: opacity 0.5s ease;
+            z-index: 14;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        .alert-pip img {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+        }
+
+        /* Hide map-props when zoomed out */
+        .map-canvas[data-zoom="out"] .map-prop[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .score-badge[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .capital-city-label[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .banner-row[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .tower-banner[data-zoom="in"],
+        .map-canvas[data-zoom="out"] .alert-pip[data-zoom="in"] {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* === Zoom toggle button === */
+        .zoom-controls {
+            position: absolute;
+            bottom: 4%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 60;
+        }
+
+        .zoom-btn {
+            width: clamp(40px, 4vw, 56px);
+            height: clamp(40px, 4vw, 56px);
+            background: rgba(26, 15, 46, 0.9);
+            border: 2px solid #dd5be5;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: clamp(18px, 1.8vw, 26px);
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            transition: all 0.2s;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(45, 25, 80, 0.95);
+            transform: scale(1.08);
+            box-shadow: 0 4px 14px rgba(221, 91, 229, 0.5);
+        }
+
+        .zoom-btn:active { transform: scale(1.02); }
+
+        .zoom-btn.active {
+            background: linear-gradient(135deg, #dd5be5, #9d2ba5);
+            box-shadow: 0 0 16px rgba(221, 91, 229, 0.8);
+        }
+
+        /* ================================================================
+           POPUP OVERLAY — Capital City (Empire) popup
+           ================================================================ */
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .popup-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .popup-overlay.open .popup {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* Popup container — uses Popup Background.png as the frame */
+        .popup {
+            position: relative;
+            width: min(90vw, 920px);
+            aspect-ratio: 905 / 690;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .popup-frame {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            pointer-events: none;
+        }
+
+        /* Inner content area (inside the frame's safe zone) */
+        .popup-inner {
+            position: absolute;
+            inset: 4% 4.5% 5% 4.5%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5% 2%;
+        }
+
+        /* === Title bar === */
+        .popup-title-bar {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2.5%;
+        }
+
+        .popup-title {
+            font-size: clamp(20px, 2.6vw, 36px);
+            font-weight: 900;
+            font-style: italic;
+            color: #dd5be5;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            line-height: 1;
+        }
+
+        .popup-subtitle {
+            font-size: clamp(12px, 1.3vw, 18px);
+            font-weight: 600;
+            color: #b8a3d4;
+            margin-top: 4px;
+        }
+
+        /* Close button */
+        .popup-close {
+            position: absolute;
+            top: -3%;
+            right: -3%;
+            width: clamp(40px, 4.5vw, 64px);
+            height: clamp(40px, 4.5vw, 64px);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .popup-close:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .popup-close img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+        }
+
+        /* === Body (split: hero card + stats) === */
+        .popup-body {
+            display: flex;
+            gap: 3%;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .hero-card {
+            width: 30%;
+            aspect-ratio: 250 / 320;
+            flex-shrink: 0;
+        }
+
+        .hero-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .stats-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5%;
+        }
+
+        .stats-header {
+            font-size: clamp(13px, 1.4vw, 20px);
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            padding: 6px 10px;
+            border: 1px solid rgba(221, 91, 229, 0.2);
+        }
+
+        .stat-row img {
+            width: clamp(24px, 2.4vw, 36px);
+            height: clamp(24px, 2.4vw, 36px);
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .stat-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .stat-rate {
+            font-size: clamp(11px, 1.1vw, 16px);
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-bonus {
+            font-size: clamp(10px, 1vw, 14px);
+            font-weight: 600;
+            color: #37ff5e;
+        }
+
+        /* === Status indicators === */
+        .status-section {
+            margin-top: 2%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: clamp(11px, 1.1vw, 15px);
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .status-icon {
+            width: clamp(22px, 2.2vw, 32px);
+            height: clamp(22px, 2.2vw, 32px);
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+        }
+
+        /* === Action buttons === */
+        .popup-actions {
+            display: flex;
+            gap: 3%;
+            justify-content: center;
+            margin-top: 2.5%;
+        }
+
+        .popup-btn {
+            position: relative;
+            width: 38%;
+            aspect-ratio: 280 / 70;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-btn:hover { transform: translateY(-2px); }
+        .popup-btn:active { transform: translateY(0); }
+
+        .popup-btn-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+        }
+
+        .popup-btn-label {
+            position: relative;
+            font-size: clamp(12px, 1.3vw, 18px);
+            font-weight: 900;
+            font-style: italic;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            z-index: 1;
+        }
+
+        .popup-btn .pip {
+            top: -6px;
+            right: -6px;
+            width: 14px;
+            height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stage">
+        <!-- Aspect-locked map canvas: image + labels stay aligned at any size -->
+        <div class="map-canvas" id="mapCanvas" data-zoom="out">
+            <img src="../assets/backgrounds/World Map Zoom Out.png" alt="World Map - Zoomed Out" class="map-background bg-zoom-out">
+            <img src="../assets/backgrounds/World Map Zoom In.png" alt="World Map - Zoomed In" class="map-background bg-zoom-in">
+
+            <!-- ISLAND TAP REGIONS — ZOOM OUT VIEW -->
+            <button class="tap-region tap-empire" data-zoom="out" onclick="openPopup('empire')" aria-label="Open Empire popup"></button>
+
+            <!-- ISLAND LABELS — ZOOM OUT VIEW -->
+            <div class="label label-empire" data-zoom="out">EMPIRE</div>
+            <div class="label label-expedition" data-zoom="out">EXPEDITION</div>
+            <div class="label label-ravagers" data-zoom="out">RAVAGERS REEF</div>
+            <div class="label label-pve" data-zoom="out">PVE</div>
+            <div class="label label-mines-1" data-zoom="out">MINES</div>
+            <div class="label label-mines-2" data-zoom="out">MINES</div>
+            <div class="label label-mines-3" data-zoom="out">MINES</div>
+            <div class="label label-mines-4" data-zoom="out">MINES</div>
+            <div class="label label-pvp-1" data-zoom="out">PVP</div>
+            <div class="label label-pvp-2" data-zoom="out">PVP</div>
+            <div class="label label-pvp-3" data-zoom="out">PVP</div>
+
+            <!-- ISLAND TAP REGIONS — ZOOM IN VIEW -->
+            <button class="tap-region tap-empire-zoomed" data-zoom="in" onclick="openPopup('empire')" aria-label="Open Empire popup"></button>
+
+            <!-- ISLAND LABELS — ZOOM IN VIEW (closer detail, fewer islands visible) -->
+            <div class="label label-empire-z" data-zoom="in">EMPIRE</div>
+            <div class="label label-ravagers-z" data-zoom="in">RAVAGERS REEF</div>
+            <div class="label label-expedition-z" data-zoom="in">EXPEDITION</div>
+            <div class="label label-pve-z" data-zoom="in">PVE</div>
+
+            <!-- ZOOM-IN ISLAND DETAILS -->
+
+            <!-- Empire: banners above + Capital City + label + 4 battle indicators -->
+
+            <!-- Banners above Capital City (boss / dungeon / fuel) each with notification pip -->
+            <div class="banner-row" data-zoom="in">
+                <div class="banner-item">
+                    <img src="../assets/icons/ui_map_banner_battle_boss.png" alt="Boss" class="banner-img">
+                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                </div>
+                <div class="banner-item">
+                    <img src="../assets/icons/ui_map_banner_battle_dungeon.png" alt="Dungeon" class="banner-img">
+                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                </div>
+                <div class="banner-item">
+                    <img src="../assets/icons/ui_map_banner_fuel.png" alt="Fuel" class="banner-img">
+                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                </div>
+            </div>
+
+            <div class="map-prop prop-capital-city" data-zoom="in" onclick="openPopup('empire')" title="Capital City">
+                <img src="../assets/ui-elements/map_image_capital_city.png" alt="Capital City">
+            </div>
+            <div class="capital-city-label" data-zoom="in">Capital City</div>
+
+            <!-- 4 red battle indicators scattered across Empire -->
+            <div class="map-prop prop-monster monster-1" data-zoom="in" title="Battle">
+                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
+            </div>
+            <div class="map-prop prop-monster monster-2" data-zoom="in" title="Battle">
+                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
+            </div>
+            <div class="map-prop prop-monster monster-3" data-zoom="in" title="Battle">
+                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
+            </div>
+            <div class="map-prop prop-monster monster-4" data-zoom="in" title="Battle">
+                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
+            </div>
+
+            <!-- Ravagers Reef: PVP banner above + tower with flag + score badge with energy icon -->
+            <div class="tower-banner tower-banner-ravagers" data-zoom="in">
+                <img src="../assets/icons/ui_map_pvp_banners.png" alt="PVP Banner">
+            </div>
+            <div class="map-prop prop-tower prop-tower-ravagers" data-zoom="in" title="Ravagers Reef Tower">
+                <img src="../assets/ui-elements/map_image_tower_flag.png" alt="Tower">
+            </div>
+            <div class="score-badge badge-ravagers" data-zoom="in">
+                <img src="../images/icons/currency-energy.png" alt="" class="badge-icon">
+                <span>24/24</span>
+            </div>
+
+            <!-- Expedition: PVP banner above + tower + score badge with energy icon -->
+            <div class="tower-banner tower-banner-expedition" data-zoom="in">
+                <img src="../assets/icons/ui_map_pvp_banners.png" alt="PVP Banner">
+            </div>
+            <div class="map-prop prop-tower prop-tower-expedition" data-zoom="in" title="Expedition Tower">
+                <img src="../assets/ui-elements/map_image_tower.png" alt="Tower">
+            </div>
+            <div class="score-badge badge-expedition" data-zoom="in">
+                <img src="../images/icons/currency-energy.png" alt="" class="badge-icon">
+                <span>24/24</span>
+            </div>
+
+            <!-- Far-right alert pip -->
+            <div class="alert-pip" data-zoom="in">
+                <img src="../assets/ui-elements/Notification Pip Large.png" alt="Alert">
+            </div>
+
+
+            <!-- TOP-LEFT: PLAYER PROFILE -->
+            <div class="player-profile">
+                <div class="player-avatar">
+                    <img src="../images/portraits/hero-gwen.png" alt="Player">
+                </div>
+                <div class="player-info">
+                    <div class="player-name">MsLancesAlot</div>
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                    <div class="player-level">
+                        <span class="level-label">Lv</span>
+                        <span class="level-num">27</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOP-RIGHT: RESOURCES -->
+            <div class="resources">
+                <div class="resource"><img src="../images/icons/inventory_gold.png" alt="Gold"><span>1.5k</span></div>
+                <div class="resource"><img src="../images/icons/inventory_steel.png" alt="Steel"><span>1.5k</span></div>
+                <div class="resource"><img src="../images/icons/inventory_brass.png" alt="Brass"><span>1.5k</span></div>
+                <div class="resource"><img src="../images/icons/inventory_coal.png" alt="Coal"><span>1.5k</span></div>
+                <div class="resource"><img src="../images/icons/inventory_gold.png" alt="Fuel"><span>1.5k</span></div>
+            </div>
+
+            <!-- LEFT HUD BUTTONS -->
+            <div class="hud-btn btn-empire-summary">
+                <span class="hud-btn-label">Empire<br>Summary</span>
+                <div class="pip"></div>
+            </div>
+            <div class="hud-btn btn-conquest-guide">
+                <span class="hud-btn-label">Conquest<br>Guide</span>
+                <div class="pip"></div>
+            </div>
+
+            <!-- BOTTOM LEFT: HEROES + BUILDINGS -->
+            <div class="heroes">
+                <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
+                <span class="heroes-label">Army</span>
+            </div>
+            <div class="hud-btn btn-buildings">
+                <span class="hud-btn-label">Buildings</span>
+                <div class="pip"></div>
+            </div>
+
+            <!-- RIGHT HUD BUTTONS -->
+            <div class="hud-btn btn-offers">
+                <span class="hud-btn-label">Offers</span>
+                <div class="pip"></div>
+            </div>
+            <div class="hud-btn btn-store">
+                <span class="hud-btn-label">Store</span>
+                <div class="pip"></div>
+            </div>
+
+            <!-- BOTTOM RIGHT: SUMMON HERO -->
+            <div class="hud-btn hud-btn-large btn-summon">
+                <span class="hud-btn-label">Summon<br>Hero</span>
+                <div class="pip"></div>
+            </div>
+
+            <!-- ZOOM CONTROLS -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOutBtn" title="Zoom out (or scroll up)">−</button>
+                <button class="zoom-btn" id="zoomInBtn" title="Zoom in (or scroll down)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         POPUP: CAPITAL CITY (Empire)
+         ================================================================ -->
+    <div class="popup-overlay" id="popup-empire" onclick="if(event.target===this)closePopup()">
+        <div class="popup">
+            <img src="../assets/panels/Popup Background.png" alt="" class="popup-frame">
+
+            <button class="popup-close" onclick="closePopup()" aria-label="Close">
+                <img src="../assets/buttons/ui_btn_close.png" alt="">
+            </button>
+
+            <div class="popup-inner">
+                <!-- Title bar -->
+                <div class="popup-title-bar">
+                    <div class="popup-title">CAPITAL CITY</div>
+                    <div class="popup-subtitle">Governor</div>
+                </div>
+
+                <!-- Body: hero card + stats -->
+                <div class="popup-body">
+                    <!-- Hero Card -->
+                    <div class="hero-card">
+                        <img src="../assets/ui-elements/ui_component_card_hero.png" alt="Gwen">
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-section">
+                        <div class="stats-header">Heroes Empire bonuses</div>
+
+                        <div class="stats-grid">
+                            <div class="stat-row">
+                                <img src="../images/icons/inventory_gold.png" alt="">
+                                <div class="stat-text">
+                                    <div class="stat-rate">100/m</div>
+                                    <div class="stat-bonus">+1.1k</div>
+                                </div>
+                            </div>
+
+                            <div class="stat-row">
+                                <img src="../images/icons/inventory_steel.png" alt="">
+                                <div class="stat-text">
+                                    <div class="stat-rate">100/m</div>
+                                    <div class="stat-bonus">+1.1k</div>
+                                </div>
+                            </div>
+
+                            <div class="stat-row">
+                                <img src="../images/icons/inventory_brass.png" alt="">
+                                <div class="stat-text">
+                                    <div class="stat-rate">100/m</div>
+                                </div>
+                            </div>
+
+                            <div class="stat-row">
+                                <img src="../images/icons/inventory_coal.png" alt="">
+                                <div class="stat-text">
+                                    <div class="stat-rate">100/m</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status indicators -->
+                        <div class="status-section">
+                            <div class="status-row">
+                                <img src="../assets/icons/ui_map_banner_fuel.png" alt="" class="status-icon">
+                                <span>Resources Upgrade Available</span>
+                            </div>
+                            <div class="status-row">
+                                <img src="../assets/icons/ui_map_banner_battle_boss.png" alt="" class="status-icon">
+                                <span>Active Roaming Monsters</span>
+                            </div>
+                            <div class="status-row">
+                                <img src="../assets/icons/ui_map_banner_battle_dungeon.png" alt="" class="status-icon">
+                                <span>Active Dungeons</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="popup-actions">
+                    <button class="popup-btn">
+                        <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
+                        <span class="popup-btn-label">Change Governor</span>
+                        <span class="pip"></span>
+                    </button>
+                    <button class="popup-btn">
+                        <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
+                        <span class="popup-btn-label">Enter Empire</span>
+                        <span class="pip"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Popup =====
+        function openPopup(name) {
+            const el = document.getElementById('popup-' + name);
+            if (el) el.classList.add('open');
+        }
+        function closePopup() {
+            document.querySelectorAll('.popup-overlay.open').forEach(el => el.classList.remove('open'));
+        }
+
+        // ===== Zoom =====
+        const mapCanvas = document.getElementById('mapCanvas');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+
+        function setZoom(level) {
+            // level: "in" or "out"
+            mapCanvas.dataset.zoom = level;
+            zoomInBtn.classList.toggle('active', level === 'in');
+            zoomOutBtn.classList.toggle('active', level === 'out');
+        }
+
+        zoomInBtn.addEventListener('click', () => setZoom('in'));
+        zoomOutBtn.addEventListener('click', () => setZoom('out'));
+
+        // ===== Mouse wheel zoom (debounced) =====
+        let wheelLock = false;
+        const stage = document.querySelector('.stage');
+        stage.addEventListener('wheel', (e) => {
+            // Don't intercept scroll inside an open popup
+            if (document.querySelector('.popup-overlay.open')) return;
+            e.preventDefault();
+            if (wheelLock) return;
+            wheelLock = true;
+            setTimeout(() => { wheelLock = false; }, 600);
+
+            // Scroll DOWN (positive deltaY) = zoom IN
+            // Scroll UP (negative deltaY) = zoom OUT
+            if (e.deltaY > 0) setZoom('in');
+            else setZoom('out');
+        }, { passive: false });
+
+        // ===== Keyboard =====
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closePopup();
+            if (e.key === '+' || e.key === '=') setZoom('in');
+            if (e.key === '-' || e.key === '_') setZoom('out');
+        });
+
+        // Initialize button state
+        setZoom('out');
+    </script>
+</body>
+</html>

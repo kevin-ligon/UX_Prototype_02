@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP: Expedition Popup</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="popup-styles.css">
+</head>
+<body>
+    <div class="popup-container">
+        <div class="popup-background">
+            <!-- Close Button -->
+            <button class="btn-close" aria-label="Close">
+                <img src="../images/ui-elements/btn-close.png" alt="Close">
+            </button>
+
+            <!-- Header -->
+            <h1 class="popup-title">PVP : EXPEDITION</h1>
+
+            <!-- Leaderboard Header -->
+            <div class="leaderboard-header">
+                <span class="leaderboard-label">Leaderboard</span>
+                <div class="players-count">
+                    <img src="../images/icons/players.png" alt="Players">
+                    <span>12</span>
+                </div>
+            </div>
+
+            <!-- Player Position (highlighted) -->
+            <div class="leaderboard-row player-row">
+                <div class="rank-triangle"></div>
+                <span class="rank-number">5.</span>
+                <span class="player-name">PLAYERS NAME</span>
+                <img src="../images/icons/pvp.png" alt="PVP" class="pvp-icon">
+                <span class="player-score">50</span>
+                <img src="../images/icons/stat-increase.png" alt="Stat increase" class="stat-icon">
+            </div>
+
+            <!-- Other Players -->
+            <div class="leaderboard-row">
+                <span class="rank-number">4.</span>
+                <span class="player-name-alt">PLAYERS NAME</span>
+                <img src="../images/icons/pvp.png" alt="PVP" class="pvp-icon">
+                <span class="player-score">45</span>
+            </div>
+
+            <div class="leaderboard-row">
+                <span class="rank-number">6.</span>
+                <span class="player-name-alt">PLAYERS NAME</span>
+                <img src="../images/icons/pvp.png" alt="PVP" class="pvp-icon">
+                <span class="player-score">55</span>
+            </div>
+
+            <!-- Potential Rewards -->
+            <h2 class="section-title">Potential Rewards</h2>
+            <div class="rewards-grid">
+                <div class="reward-card">
+                    <img src="../images/backgrounds/card-uncommon.png" alt="Reward" class="reward-bg">
+                    <img src="../images/icons/currency-fuel.png" alt="Fuel" class="reward-icon">
+                    <span class="reward-quantity">x11</span>
+                    <span class="reward-bonus">+100k</span>
+                </div>
+                <div class="reward-card">
+                    <img src="../images/backgrounds/card-uncommon.png" alt="Reward" class="reward-bg">
+                    <img src="../images/icons/currency-fuel.png" alt="Fuel" class="reward-icon">
+                    <span class="reward-quantity">x11</span>
+                    <span class="reward-bonus">+100k</span>
+                </div>
+                <div class="reward-card">
+                    <img src="../images/backgrounds/card-uncommon.png" alt="Reward" class="reward-bg">
+                    <img src="../images/icons/currency-fuel.png" alt="Fuel" class="reward-icon">
+                    <span class="reward-quantity">x11</span>
+                    <span class="reward-bonus">+100k</span>
+                </div>
+                <div class="reward-card">
+                    <img src="../images/backgrounds/card-uncommon.png" alt="Reward" class="reward-bg">
+                    <img src="../images/icons/currency-fuel.png" alt="Fuel" class="reward-icon">
+                    <span class="reward-quantity">x11</span>
+                    <span class="reward-bonus">+100k</span>
+                </div>
+                <div class="reward-card">
+                    <img src="../images/backgrounds/card-uncommon.png" alt="Reward" class="reward-bg">
+                    <img src="../images/icons/currency-fuel.png" alt="Fuel" class="reward-icon">
+                    <span class="reward-quantity">x11</span>
+                    <span class="reward-bonus">+100k</span>
+                </div>
+            </div>
+
+            <!-- Entry Cost -->
+            <div class="entry-section">
+                <div class="cost-display">
+                    <img src="../images/icons/currency-generic.png" alt="Currency" class="cost-icon">
+                    <span class="cost-amount">1.5k</span>
+                </div>
+                <button class="btn-enter">ENTER</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

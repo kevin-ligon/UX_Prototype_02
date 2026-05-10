@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Editor - Empire Game</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Barlow Condensed', sans-serif;
+            background: #0f0a1a;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: #1a0f2e;
+            border-right: 2px solid #dd5be5;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            font-size: 24px;
+            font-weight: 700;
+            font-style: italic;
+            text-transform: uppercase;
+            color: #dd5be5;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #37ff5e;
+            margin-bottom: 10px;
+        }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .asset-item {
+            width: 100%;
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 8px;
+            cursor: grab;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .asset-item:hover {
+            border-color: #dd5be5;
+            background: rgba(221, 91, 229, 0.1);
+            transform: scale(1.05);
+        }
+
+        .asset-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .asset-label {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 4px;
+            color: #9e8cb2;
+        }
+
+        .bg-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .bg-item {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .bg-item:hover {
+            border-color: #dd5be5;
+            transform: scale(1.02);
+        }
+
+        .bg-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bg-label {
+            font-size: 10px;
+            text-align: center;
+            color: #9e8cb2;
+            padding: 4px;
+            background: rgba(26, 15, 46, 0.9);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #dd5be5, #9d2ba5);
+            border: 2px solid #dd5be5;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            font-style: italic;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(221, 91, 229, 0.5);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #37ff5e, #00cc66);
+            border-color: #37ff5e;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: 'Barlow Condensed', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #0a0614;
+        }
+
+        .canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .placed-element {
+            position: absolute;
+            cursor: move;
+            border: 2px dashed transparent;
+            transition: border-color 0.2s;
+        }
+
+        .placed-element:hover {
+            border-color: #dd5be5;
+        }
+
+        .placed-element.selected {
+            border-color: #37ff5e;
+            box-shadow: 0 0 20px rgba(55, 255, 94, 0.5);
+        }
+
+        .placed-element img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            background: #ff3366;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .placed-element.selected .delete-btn {
+            display: flex;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            width: 16px;
+            height: 16px;
+            background: #37ff5e;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            display: none;
+        }
+
+        .placed-element.selected .resize-handle {
+            display: block;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 15, 46, 0.95);
+            border: 2px solid #dd5be5;
+            border-radius: 12px;
+            padding: 15px 25px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .instructions h3 {
+            font-size: 18px;
+            color: #dd5be5;
+            margin-bottom: 8px;
+        }
+
+        .instructions p {
+            font-size: 14px;
+            color: #9e8cb2;
+        }
+
+        /* Export Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a0f2e;
+            border: 3px solid #dd5be5;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .modal-content h2 {
+            color: #dd5be5;
+            margin-bottom: 20px;
+        }
+
+        .code-block {
+            background: #0a0614;
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #37ff5e;
+            overflow-x: auto;
+            white-space: pre;
+            margin-bottom: 15px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            background: #ff3366;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Map Editor</h2>
+
+        <!-- Background Section -->
+        <div class="section">
+            <h3>1. Background</h3>
+            <div class="bg-grid">
+                <div class="bg-item" onclick="setBackground('../assets/wireframes/01 World Map - All modes - highest zoom.png')">
+                    <img src="../assets/wireframes/01 World Map - All modes - highest zoom.png" alt="Wireframe">
+                    <div class="bg-label">Wireframe</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/World Map Zoom Out.png')">
+                    <img src="../assets/backgrounds/World Map Zoom Out.png" alt="World Map Zoom Out">
+                    <div class="bg-label">World Zoom Out</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/World Map Zoom In.png')">
+                    <img src="../assets/backgrounds/World Map Zoom In.png" alt="World Map Zoom In">
+                    <div class="bg-label">World Zoom In</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/Map Home Empire.png')">
+                    <img src="../assets/backgrounds/Map Home Empire.png" alt="Home Empire">
+                    <div class="bg-label">Home Empire</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/Map Expedition.png')">
+                    <img src="../assets/backgrounds/Map Expedition.png" alt="Expedition">
+                    <div class="bg-label">Expedition</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/Map Ravagers Reef.png')">
+                    <img src="../assets/backgrounds/Map Ravagers Reef.png" alt="Ravagers Reef">
+                    <div class="bg-label">Ravagers Reef</div>
+                </div>
+                <div class="bg-item" onclick="setBackground('../assets/backgrounds/Map Territory.png')">
+                    <img src="../assets/backgrounds/Map Territory.png" alt="Territory">
+                    <div class="bg-label">Territory</div>
+                </div>
+            </div>
+            <input type="file" id="bgUpload" accept="image/*" style="margin-top: 10px;">
+            <div class="bg-label" style="text-align: center; margin-top: 5px; font-size: 11px;">Or upload custom</div>
+        </div>
+
+        <!-- Islands Section -->
+        <div class="section">
+            <h3>2. Islands</h3>
+            <div class="asset-grid">
+                <div class="asset-item" draggable="true" data-type="island" data-src="../assets/ui-elements/Map Capital City.png">
+                    <img src="../assets/ui-elements/Map Capital City.png" alt="Empire">
+                </div>
+                <div class="asset-item" draggable="true" data-type="island" data-src="../assets/ui-elements/Map Prop Expedition.png">
+                    <img src="../assets/ui-elements/Map Prop Expedition.png" alt="Expedition">
+                </div>
+                <div class="asset-item" draggable="true" data-type="island" data-src="../assets/ui-elements/Map Prop Ravagers Reef.png">
+                    <img src="../assets/ui-elements/Map Prop Ravagers Reef.png" alt="Ravagers">
+                </div>
+                <div class="asset-item" draggable="true" data-type="island" data-src="../assets/ui-elements/Map Prop PVP.png">
+                    <img src="../assets/ui-elements/Map Prop PVP.png" alt="PVP">
+                </div>
+                <div class="asset-item" draggable="true" data-type="island" data-src="../assets/ui-elements/Map Boss.png">
+                    <img src="../assets/ui-elements/Map Boss.png" alt="Boss">
+                </div>
+            </div>
+        </div>
+
+        <!-- Labels Section -->
+        <div class="section">
+            <h3>3. Map Labels</h3>
+            <div class="asset-grid">
+                <div class="asset-item" draggable="true" data-type="label" data-src="../assets/ui-elements/Map Label - PVP.png">
+                    <img src="../assets/ui-elements/Map Label - PVP.png" alt="PVP Label">
+                </div>
+                <div class="asset-item" draggable="true" data-type="label" data-src="../assets/ui-elements/Map Label - PVE.png">
+                    <img src="../assets/ui-elements/Map Label - PVE.png" alt="PVE Label">
+                </div>
+                <div class="asset-item" draggable="true" data-type="label" data-src="../assets/ui-elements/Map Label - Expedition.png">
+                    <img src="../assets/ui-elements/Map Label - Expedition.png" alt="Expedition Label">
+                </div>
+                <div class="asset-item" draggable="true" data-type="label" data-src="../assets/ui-elements/Map Label - Ravagers Reef.png">
+                    <img src="../assets/ui-elements/Map Label - Ravagers Reef.png" alt="Ravagers Label">
+                </div>
+                <div class="asset-item" draggable="true" data-type="label" data-src="../assets/ui-elements/Map Label - Mines.png">
+                    <img src="../assets/ui-elements/Map Label - Mines.png" alt="Mines Label">
+                </div>
+            </div>
+        </div>
+
+        <!-- Island Elements Section -->
+        <div class="section">
+            <h3>4. Island Elements</h3>
+            <div class="asset-grid">
+                <div class="asset-item" draggable="true" data-type="element" data-src="../assets/ui-elements/Conquered indicators.png">
+                    <img src="../assets/ui-elements/Conquered indicators.png" alt="Conquered">
+                </div>
+                <div class="asset-item" draggable="true" data-type="element" data-src="../assets/ui-elements/Map Badge Offscreen.png">
+                    <img src="../assets/ui-elements/Map Badge Offscreen.png" alt="Badge">
+                </div>
+                <div class="asset-item" draggable="true" data-type="element" data-src="../assets/ui-elements/Notification Badge.png">
+                    <img src="../assets/ui-elements/Notification Badge.png" alt="Notification">
+                </div>
+                <div class="asset-item" draggable="true" data-type="element" data-src="../assets/ui-elements/Map Battle Indicator.png">
+                    <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD Elements Section -->
+        <div class="section">
+            <h3>5. HUD Elements</h3>
+            <div class="asset-grid">
+                <div class="asset-item" draggable="true" data-type="hud" data-src="../images/portraits/hero-gwen.png">
+                    <img src="../images/portraits/hero-gwen.png" alt="Avatar">
+                </div>
+                <div class="asset-item" draggable="true" data-type="hud" data-src="../assets/ui-elements/Inventory Gold.png">
+                    <img src="../assets/ui-elements/Inventory Gold.png" alt="Gold">
+                </div>
+                <div class="asset-item" draggable="true" data-type="hud" data-src="../assets/ui-elements/Inventory Steel.png">
+                    <img src="../assets/ui-elements/Inventory Steel.png" alt="Steel">
+                </div>
+                <div class="asset-item" draggable="true" data-type="hud" data-src="../assets/ui-elements/Inventory Brass.png">
+                    <img src="../assets/ui-elements/Inventory Brass.png" alt="Brass">
+                </div>
+                <div class="asset-item" draggable="true" data-type="hud" data-src="../assets/ui-elements/Inventory Coal.png">
+                    <img src="../assets/ui-elements/Inventory Coal.png" alt="Coal">
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Section -->
+        <div class="section">
+            <h3>6. Actions</h3>
+            <button class="btn" onclick="clearAll()">Clear All</button>
+            <button class="btn btn-secondary" onclick="exportHTML()">Export HTML</button>
+        </div>
+    </div>
+
+    <!-- Canvas Area -->
+    <div class="canvas-area">
+        <div class="instructions">
+            <h3>How to Use</h3>
+            <p>Drag assets from the sidebar onto the canvas • Click to select • Drag corner to resize • Delete key to remove</p>
+        </div>
+        <div class="canvas" id="canvas"></div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeModal()">&times;</div>
+            <h2>Export HTML</h2>
+            <p style="color: #9e8cb2; margin-bottom: 15px;">Copy this code and save as world-map.html</p>
+            <div class="code-block" id="exportCode"></div>
+            <button class="btn btn-secondary" onclick="copyCode()">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        let selectedElement = null;
+        let isDragging = false;
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        let elementCounter = 0;
+
+        // Background upload
+        document.getElementById('bgUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    canvas.style.backgroundImage = `url(${event.target.result})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function setBackground(url) {
+            canvas.style.backgroundImage = `url('${url}')`;
+        }
+
+        // Drag from sidebar
+        document.querySelectorAll('.asset-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('src', item.dataset.src);
+                e.dataTransfer.setData('type', item.dataset.type);
+            });
+        });
+
+        // Drop on canvas
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const src = e.dataTransfer.getData('src');
+            const type = e.dataTransfer.getData('type');
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            addElement(src, type, x, y);
+        });
+
+        function addElement(src, type, x, y) {
+            const element = document.createElement('div');
+            element.className = 'placed-element';
+            element.dataset.src = src;
+            element.dataset.type = type;
+            element.id = `element-${elementCounter++}`;
+
+            let defaultSize = 50;
+            if (type === 'island') defaultSize = 150;
+            if (type === 'label') defaultSize = 100;
+            if (type === 'element') defaultSize = 40;
+            element.style.left = `${x - defaultSize / 2}px`;
+            element.style.top = `${y - defaultSize / 2}px`;
+            element.style.width = `${defaultSize}px`;
+            element.style.height = `${defaultSize}px`;
+
+            element.innerHTML = `
+                <img src="${src}" alt="">
+                <div class="delete-btn" onclick="deleteElement('${element.id}')">&times;</div>
+                <div class="resize-handle"></div>
+            `;
+
+            canvas.appendChild(element);
+
+            // Make draggable
+            element.addEventListener('mousedown', startDrag);
+
+            // Resize handle
+            const resizeHandle = element.querySelector('.resize-handle');
+            resizeHandle.addEventListener('mousedown', startResize);
+
+            // Select on click
+            element.addEventListener('click', () => selectElement(element));
+        }
+
+        function selectElement(element) {
+            if (selectedElement) {
+                selectedElement.classList.remove('selected');
+            }
+            selectedElement = element;
+            element.classList.add('selected');
+        }
+
+        function startDrag(e) {
+            if (e.target.classList.contains('resize-handle') || e.target.classList.contains('delete-btn')) return;
+
+            isDragging = true;
+            selectedElement = this;
+            selectElement(this);
+
+            startX = e.clientX - this.offsetLeft;
+            startY = e.clientY - this.offsetTop;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            e.preventDefault();
+        }
+
+        function drag(e) {
+            if (!isDragging || !selectedElement) return;
+
+            const rect = canvas.getBoundingClientRect();
+            let newX = e.clientX - startX;
+            let newY = e.clientY - startY;
+
+            // Keep within canvas bounds
+            newX = Math.max(0, Math.min(newX, rect.width - selectedElement.offsetWidth));
+            newY = Math.max(0, Math.min(newY, rect.height - selectedElement.offsetHeight));
+
+            selectedElement.style.left = `${newX}px`;
+            selectedElement.style.top = `${newY}px`;
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function startResize(e) {
+            isResizing = true;
+            selectedElement = this.parentElement;
+
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = selectedElement.offsetWidth;
+            startHeight = selectedElement.offsetHeight;
+
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function resize(e) {
+            if (!isResizing || !selectedElement) return;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+
+            const newWidth = startWidth + deltaX;
+            const newHeight = startHeight + deltaY;
+
+            if (newWidth > 20) {
+                selectedElement.style.width = `${newWidth}px`;
+            }
+            if (newHeight > 20) {
+                selectedElement.style.height = `${newHeight}px`;
+            }
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        function deleteElement(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+                selectedElement = null;
+            }
+        }
+
+        // Delete key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' && selectedElement) {
+                selectedElement.remove();
+                selectedElement = null;
+            }
+        });
+
+        // Clear all
+        function clearAll() {
+            if (confirm('Clear all elements?')) {
+                canvas.innerHTML = '';
+                selectedElement = null;
+            }
+        }
+
+        // Export HTML
+        function exportHTML() {
+            const elements = canvas.querySelectorAll('.placed-element');
+            const canvasRect = canvas.getBoundingClientRect();
+
+            let elementsHTML = '';
+            elements.forEach(el => {
+                const left = (el.offsetLeft / canvasRect.width * 100).toFixed(2);
+                const top = (el.offsetTop / canvasRect.height * 100).toFixed(2);
+                const width = (el.offsetWidth / canvasRect.width * 100).toFixed(2);
+                const height = (el.offsetHeight / canvasRect.height * 100).toFixed(2);
+
+                elementsHTML += `        <div class="map-element" style="left: ${left}%; top: ${top}%; width: ${width}%; height: ${height}%;">
+            <img src="${el.dataset.src}" alt="">
+        </div>\n`;
+            });
+
+            const bgImage = canvas.style.backgroundImage.match(/url\("?(.+?)"?\)/)?.[1] || '';
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Map - Empire Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Barlow Condensed', sans-serif; overflow: hidden; }
+        .world-map { position: relative; width: 100vw; height: 100vh; background-image: url('${bgImage}'); background-size: cover; background-position: center; }
+        .map-element { position: absolute; cursor: pointer; transition: transform 0.2s; }
+        .map-element:hover { transform: scale(1.05); }
+        .map-element img { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <div class="world-map">
+${elementsHTML}    </div>
+</body>
+</html>`;
+
+            document.getElementById('exportCode').textContent = html;
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+
+        function copyCode() {
+            const code = document.getElementById('exportCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

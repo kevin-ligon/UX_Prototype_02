@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital City - Empire Popup</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="popup-styles.css">
+    <link rel="stylesheet" href="popup-empire.css">
+</head>
+<body>
+    <div class="popup-container popup-empire">
+        <div class="popup-background">
+            <!-- Close Button -->
+            <button class="btn-close" aria-label="Close">
+                <img src="../images/ui-elements/btn-close.png" alt="Close">
+            </button>
+
+            <!-- Header -->
+            <h1 class="popup-title">CAPITAL CITY</h1>
+
+            <!-- Governor Section -->
+            <div class="empire-layout">
+                <div class="governor-section">
+                    <h2 class="section-title">Governor</h2>
+
+                    <!-- Hero Card -->
+                    <div class="hero-card">
+                        <img src="../images/backgrounds/hero-card-common.png" alt="Hero background" class="hero-bg">
+                        <img src="../images/portraits/hero-gwen.png" alt="Gwen" class="hero-portrait">
+                        <div class="hero-level">LV <span>888</span></div>
+                        <img src="../images/icons/rank-04.png" alt="Rank" class="hero-rank">
+                        <img src="../images/icons/notification-pip.png" alt="Notification" class="hero-notification">
+                        <img src="../images/icons/lock.png" alt="Locked" class="hero-lock">
+
+                        <!-- Hero Icons -->
+                        <div class="hero-icons">
+                            <img src="../images/ui-elements/bg-card-icon.png" alt="Icon BG" class="icon-bg">
+                            <img src="../images/icons/rps-symbiotic-liquid.png" alt="RPS" class="icon-rps">
+                        </div>
+                        <div class="hero-icons hero-icons-bottom">
+                            <img src="../images/ui-elements/bg-card-icon.png" alt="Icon BG" class="icon-bg">
+                            <img src="../images/icons/archetype-tank.png" alt="Tank" class="icon-archetype">
+                        </div>
+                    </div>
+
+                    <h3 class="hero-name">Gwen</h3>
+                </div>
+
+                <!-- Bonuses Section -->
+                <div class="bonuses-section">
+                    <h2 class="section-title">Heroes Empire bonuses</h2>
+
+                    <!-- Stat Rows -->
+                    <div class="stat-row stat-increased">
+                        <img src="../images/icons/currency-energy.png" alt="Energy" class="stat-icon-lg">
+                        <span class="stat-value">100/m</span>
+                        <span class="stat-increase">+1.1k</span>
+                        <img src="../images/icons/stat-increase.png" alt="Increase" class="stat-arrow">
+                    </div>
+
+                    <div class="stat-row">
+                        <img src="../images/icons/currency-steel.png" alt="Steel" class="stat-icon-lg">
+                        <span class="stat-value">100/m</span>
+                    </div>
+
+                    <div class="stat-row stat-increased">
+                        <img src="../images/icons/currency-gear-meteorite.png" alt="Gear" class="stat-icon-lg">
+                        <span class="stat-value">100/m</span>
+                        <span class="stat-increase">+1.1k</span>
+                        <img src="../images/icons/stat-increase.png" alt="Increase" class="stat-arrow">
+                    </div>
+
+                    <div class="stat-row">
+                        <img src="../images/icons/rps-symbiotic-liquid.png" alt="Liquid" class="stat-icon-lg">
+                        <span class="stat-value">100/m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Icons Section -->
+            <div class="map-icons-section">
+                <div class="map-icon-item">
+                    <img src="../images/ui-elements/banner-map-fuel.png" alt="Fuel">
+                    <span>Resources Upgrade Available</span>
+                </div>
+                <div class="map-icon-item">
+                    <img src="../images/ui-elements/banner-map-boss.png" alt="Boss">
+                    <span>Active Roaming monsters</span>
+                </div>
+                <div class="map-icon-item">
+                    <img src="../images/ui-elements/banner-map-dungeon.png" alt="Dungeon">
+                    <span>Active Dungeons</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="empire-actions">
+                <button class="btn-empire">
+                    CHANGE GOVERNOR
+                    <span class="btn-notification"></span>
+                </button>
+                <button class="btn-empire">
+                    MANAGE CITY
+                    <span class="btn-notification"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

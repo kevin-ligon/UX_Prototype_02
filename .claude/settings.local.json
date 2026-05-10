@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__figma__get_design_context",
+      "Bash(python3 *)",
+      "Bash(pip3 install *)",
+      "Read(//Users/uxmachine/.claude/**)",
+      "Read(//Users/uxmachine/**)",
+      "Bash(md5 /Users/uxmachine/Documents/UX_Prototype_02/images/icons/heroes_button.png)",
+      "Bash(md5 /Users/uxmachine/Documents/UX_Prototype_02/images/icons/heroes_button_test.png)"
+    ]
+  }
+}

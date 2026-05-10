@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empire - Interactive Map Prototype</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="popup-styles.css">
+    <link rel="stylesheet" href="map-styles.css">
+</head>
+<body>
+    <!-- World Map View (Default) -->
+    <div id="world-map-view" class="map-view active">
+        <div class="map-container">
+            <img src="../assets/backgrounds/World Map Zoom Out.png" alt="World Map" class="map-background">
+
+            <!-- Game Mode Regions (Clickable) -->
+            <div class="map-region empire-region" data-mode="empire" style="top: 45%; left: 25%; width: 15%; height: 20%;">
+                <img src="../assets/ui-elements/Map Capital City.png" alt="Empire" class="region-icon">
+                <img src="../assets/ui-elements/Map Label - PVP.png" alt="Empire Label" class="region-label">
+                <div class="notification-badge"></div>
+            </div>
+
+            <div class="map-region expedition-region" data-mode="expedition" style="top: 35%; right: 22%; width: 12%; height: 18%;">
+                <img src="../assets/ui-elements/Map Prop Expedition.png" alt="Expedition" class="region-icon">
+                <img src="../assets/ui-elements/Map Label - Expedition.png" alt="Expedition Label" class="region-label">
+            </div>
+
+            <div class="map-region ravagers-region" data-mode="ravagers" style="top: 25%; left: 45%; width: 14%; height: 16%;">
+                <img src="../assets/ui-elements/Map Prop Ravagers Reef.png" alt="Ravagers Reef" class="region-icon">
+                <img src="../assets/ui-elements/Map Label - Ravagers Reef.png" alt="Ravagers Label" class="region-label">
+            </div>
+
+            <div class="map-region pve-region" data-mode="pve" style="bottom: 25%; left: 30%; width: 12%; height: 15%;">
+                <img src="../assets/ui-elements/Map Prop PVP.png" alt="PVE" class="region-icon">
+                <img src="../assets/ui-elements/Map Label - PVE.png" alt="PVE Label" class="region-label">
+            </div>
+
+            <div class="map-region mines-region" data-mode="mines" style="bottom: 35%; right: 28%; width: 10%; height: 12%;">
+                <img src="../assets/ui-elements/Map Boss.png" alt="Mines" class="region-icon">
+                <img src="../assets/ui-elements/Map Label - Mines.png" alt="Mines Label" class="region-label">
+            </div>
+        </div>
+
+        <!-- Map HUD -->
+        <div class="map-hud">
+            <div class="hud-top">
+                <div class="player-info">
+                    <div class="avatar-frame">
+                        <img src="../images/portraits/hero-gwen.png" alt="Player Avatar">
+                    </div>
+                    <div class="player-details">
+                        <div class="player-name">MsLancesAlot</div>
+                        <div class="player-level">Lvl 888</div>
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Gold.png" alt="Gold">
+                        <span>125.5k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Steel.png" alt="Steel">
+                        <span>88.2k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Brass.png" alt="Brass">
+                        <span>42.8k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Coal.png" alt="Coal">
+                        <span>91.1k</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-bottom">
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Empire Summary.png" alt="Empire Summary">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Conquest Guide.png" alt="Conquest">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map Hud Button Heroes.png" alt="Heroes">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Buildings.png" alt="Buildings">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Store.png" alt="Store">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Offers.png" alt="Offers">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Summon.png" alt="Summon">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Mail.png" alt="Mail">
+                    <div class="notification-badge"></div>
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Settings.png" alt="Settings">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empire Detailed View -->
+    <div id="empire-view" class="map-view">
+        <div class="map-container">
+            <img src="../assets/backgrounds/Map Home Empire.png" alt="Empire Map" class="map-background">
+
+            <button class="back-button" data-target="world-map-view">
+                <span>&larr; Back to World Map</span>
+            </button>
+        </div>
+
+        <div class="map-hud">
+            <div class="hud-top">
+                <div class="player-info">
+                    <div class="avatar-frame">
+                        <img src="../images/portraits/hero-gwen.png" alt="Player Avatar">
+                    </div>
+                    <div class="player-details">
+                        <div class="player-name">MsLancesAlot</div>
+                        <div class="player-level">Lvl 888</div>
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Gold.png" alt="Gold">
+                        <span>125.5k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Steel.png" alt="Steel">
+                        <span>88.2k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Brass.png" alt="Brass">
+                        <span>42.8k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Coal.png" alt="Coal">
+                        <span>91.1k</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-bottom">
+                <button class="hud-button" id="show-empire-popup">
+                    <img src="../assets/buttons/Map HUD Button Empire Summary.png" alt="Empire Summary">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Conquest Guide.png" alt="Conquest">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map Hud Button Heroes.png" alt="Heroes">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Buildings.png" alt="Buildings">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Store.png" alt="Store">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expedition Detailed View -->
+    <div id="expedition-view" class="map-view">
+        <div class="map-container">
+            <img src="../assets/backgrounds/Map Expedition.png" alt="Expedition Map" class="map-background">
+
+            <button class="back-button" data-target="world-map-view">
+                <span>&larr; Back to World Map</span>
+            </button>
+        </div>
+
+        <div class="map-hud">
+            <div class="hud-top">
+                <div class="player-info">
+                    <div class="avatar-frame">
+                        <img src="../images/portraits/hero-gwen.png" alt="Player Avatar">
+                    </div>
+                    <div class="player-details">
+                        <div class="player-name">MsLancesAlot</div>
+                        <div class="player-level">Lvl 888</div>
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Gold.png" alt="Gold">
+                        <span>125.5k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Steel.png" alt="Steel">
+                        <span>88.2k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Brass.png" alt="Brass">
+                        <span>42.8k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Coal.png" alt="Coal">
+                        <span>91.1k</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-bottom">
+                <button class="hud-button" id="show-expedition-popup">
+                    <img src="../assets/buttons/Map HUD Button Empire Summary.png" alt="Expedition Summary">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map Hud Button Heroes.png" alt="Heroes">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Store.png" alt="Store">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Summon.png" alt="Summon">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ravagers Reef Detailed View -->
+    <div id="ravagers-view" class="map-view">
+        <div class="map-container">
+            <img src="../assets/backgrounds/Map Ravagers Reef.png" alt="Ravagers Reef Map" class="map-background">
+
+            <button class="back-button" data-target="world-map-view">
+                <span>&larr; Back to World Map</span>
+            </button>
+        </div>
+
+        <div class="map-hud">
+            <div class="hud-top">
+                <div class="player-info">
+                    <div class="avatar-frame">
+                        <img src="../images/portraits/hero-gwen.png" alt="Player Avatar">
+                    </div>
+                    <div class="player-details">
+                        <div class="player-name">MsLancesAlot</div>
+                        <div class="player-level">Lvl 888</div>
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Gold.png" alt="Gold">
+                        <span>125.5k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Steel.png" alt="Steel">
+                        <span>88.2k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Brass.png" alt="Brass">
+                        <span>42.8k</span>
+                    </div>
+                    <div class="resource-item">
+                        <img src="../assets/ui-elements/Inventory Coal.png" alt="Coal">
+                        <span>91.1k</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-bottom">
+                <button class="hud-button" id="show-ravagers-popup">
+                    <img src="../assets/buttons/Map HUD Button Empire Summary.png" alt="Ravagers Summary">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map Hud Button Heroes.png" alt="Heroes">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Store.png" alt="Store">
+                </button>
+                <button class="hud-button">
+                    <img src="../assets/buttons/Map HUD Button Summon.png" alt="Summon">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PVE View (Simple) -->
+    <div id="pve-view" class="map-view">
+        <div class="map-container">
+            <img src="../assets/backgrounds/World Map Zoom In.png" alt="PVE Map" class="map-background">
+
+            <button class="back-button" data-target="world-map-view">
+                <span>&larr; Back to World Map</span>
+            </button>
+
+            <button class="show-popup-trigger" id="show-pve-popup" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                <span>Tap to Enter PVE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mines View (Simple) -->
+    <div id="mines-view" class="map-view">
+        <div class="map-container">
+            <img src="../assets/backgrounds/Map Territory.png" alt="Mines Map" class="map-background">
+
+            <button class="back-button" data-target="world-map-view">
+                <span>&larr; Back to World Map</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Popup Overlays -->
+    <div id="popup-overlay" class="popup-overlay">
+        <div class="popup-content">
+            <iframe id="popup-frame" src=""></iframe>
+            <button class="close-popup-btn">&times;</button>
+        </div>
+    </div>
+
+    <script src="map-interactions.js"></script>
+</body>
+</html>

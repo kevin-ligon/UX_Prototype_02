@@ -44,3 +44,12 @@ yarn-error.log*
 tmp/
 temp/
 *.tmp
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Claude Code scratch
+.claude/scheduled_tasks.json

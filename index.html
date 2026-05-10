@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empire Popups - Figma Design Preview</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Variables */
+        :root {
+            --color-primary: #dd5be5;
+            --color-secondary: #37ff5e;
+            --color-bg-dark: #0f0a1a;
+            --color-bg-card: #1a0f2e;
+            --color-text: #ffffff;
+            --color-text-muted: #9e8cb2;
+            --spacing: 16px;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Barlow Condensed', -apple-system, system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-dark) 0%, #1a0f2e 100%);
+            color: var(--color-text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+            padding: 32px 0;
+            border-bottom: 2px solid rgba(221, 91, 229, 0.3);
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 20px;
+            color: var(--color-text-muted);
+            font-weight: 500;
+        }
+
+        .header .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            min-width: 140px;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Grid Layout */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Preview Card */
+        .preview-card {
+            background: var(--color-bg-card);
+            border: 2px solid rgba(221, 91, 229, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .preview-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--color-primary);
+            box-shadow: 0 16px 40px rgba(221, 91, 229, 0.3);
+        }
+
+        .preview-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .preview-card:hover::before {
+            opacity: 1;
+        }
+
+        .preview-thumbnail {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(221, 91, 229, 0.1) 0%, rgba(55, 255, 94, 0.05) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-thumbnail img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+        }
+
+        .preview-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--color-primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .preview-info {
+            padding: 24px;
+        }
+
+        .preview-title {
+            font-size: 28px;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        .preview-description {
+            font-size: 16px;
+            color: var(--color-text-muted);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .preview-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--color-text-muted);
+        }
+
+        .btn-view {
+            display: inline-block;
+            width: 100%;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            border: 3px solid #ffcc00;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-view:active {
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 64px;
+            padding: 32px 0;
+            border-top: 2px solid rgba(221, 91, 229, 0.3);
+            color: var(--color-text-muted);
+        }
+
+        .footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header .stats {
+                gap: 16px;
+            }
+
+            .stat-item {
+                min-width: 120px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Empire Prototypes</h1>
+        <p>Figma Design Prototypes - Extracted & Optimized</p>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Prototypes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Game Modes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">40+</div>
+                <div class="stat-label">Assets</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Responsive</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Grid -->
+    <div class="preview-grid">
+        <!-- PVP Expedition -->
+        <div class="preview-card" onclick="window.location.href='app/popup-pvp-expedition.html'">
+            <div class="preview-thumbnail">
+                <span class="preview-badge">PVP</span>
+                <img src="images/figma-popups-overview.png" alt="PVP Expedition" style="transform: scale(0.5) translateX(-25%);">
+            </div>
+            <div class="preview-info">
+                <h2 class="preview-title">PVP: Expedition</h2>
+                <p class="preview-description">Player vs Player leaderboard with rankings, rewards, and entry costs</p>
+                <div class="preview-meta">
+                    <span class="meta-tag">Leaderboard</span>
+                    <span class="meta-tag">Rewards</span>
+                    <span class="meta-tag">Entry Cost</span>
+                </div>
+                <a href="app/popup-pvp-expedition.html" class="btn-view">View Popup</a>
+            </div>
+        </div>
+
+        <!-- Empire -->
+        <div class="preview-card" onclick="window.location.href='app/popup-empire.html'">
+            <div class="preview-thumbnail">
+                <span class="preview-badge" style="background: #ff9500;">Empire</span>
+                <img src="images/portraits/hero-gwen.png" alt="Capital City">
+            </div>
+            <div class="preview-info">
+                <h2 class="preview-title">Capital City</h2>
+                <p class="preview-description">Empire management with governor, hero bonuses, and city actions</p>
+                <div class="preview-meta">
+                    <span class="meta-tag">Hero Card</span>
+                    <span class="meta-tag">Stat Bonuses</span>
+                    <span class="meta-tag">Management</span>
+                </div>
+                <a href="app/popup-empire.html" class="btn-view">View Popup</a>
+            </div>
+        </div>
+
+        <!-- PVE -->
+        <div class="preview-card" onclick="window.location.href='app/popup-pve.html'">
+            <div class="preview-thumbnail">
+                <span class="preview-badge" style="background: #ff4500;">PVE</span>
+                <img src="images/backgrounds/battle-scene.png" alt="PVE Live Ops" style="opacity: 0.8;">
+            </div>
+            <div class="preview-info">
+                <h2 class="preview-title">PVE Live Ops</h2>
+                <p class="preview-description">Mission progress tracker with battle preview and potential rewards</p>
+                <div class="preview-meta">
+                    <span class="meta-tag">Missions</span>
+                    <span class="meta-tag">Progress Bar</span>
+                    <span class="meta-tag">Battle Scene</span>
+                </div>
+                <a href="app/popup-pve.html" class="btn-view">View Popup</a>
+            </div>
+        </div>
+
+        <!-- Interactive Map Prototype -->
+        <div class="preview-card" onclick="window.location.href='app/map-prototype.html'">
+            <div class="preview-thumbnail" style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(221, 91, 229, 0.1) 100%);">
+                <span class="preview-badge" style="background: #00d4ff;">Map</span>
+                <div style="font-size: 80px; opacity: 0.5;">🗺️</div>
+            </div>
+            <div class="preview-info">
+                <h2 class="preview-title">Interactive Map</h2>
+                <p class="preview-description">Navigate between game modes: Empire, Expedition, Ravagers Reef, PVE, and Mines</p>
+                <div class="preview-meta">
+                    <span class="meta-tag">World Map</span>
+                    <span class="meta-tag">Game Modes</span>
+                    <span class="meta-tag">Clickable Regions</span>
+                </div>
+                <a href="app/map-prototype.html" class="btn-view" style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); border-color: #00d4ff;">Explore Map</a>
+            </div>
+        </div>
+
+        <!-- Documentation -->
+        <div class="preview-card" onclick="window.open('FIGMA_EXTRACTION_SUMMARY.md', '_blank')">
+            <div class="preview-thumbnail" style="background: linear-gradient(135deg, rgba(55, 255, 94, 0.1) 0%, rgba(221, 91, 229, 0.05) 100%);">
+                <span class="preview-badge" style="background: #37ff5e; color: #000;">Docs</span>
+                <div style="font-size: 80px; opacity: 0.5;">📄</div>
+            </div>
+            <div class="preview-info">
+                <h2 class="preview-title">Documentation</h2>
+                <p class="preview-description">Complete extraction summary, file structure, and customization guide</p>
+                <div class="preview-meta">
+                    <span class="meta-tag">File Structure</span>
+                    <span class="meta-tag">Assets List</span>
+                    <span class="meta-tag">Usage Guide</span>
+                </div>
+                <a href="FIGMA_EXTRACTION_SUMMARY.md" class="btn-view" style="background: linear-gradient(135deg, #37ff5e 0%, #00cc66 100%); border-color: #37ff5e; color: #000;" onclick="event.stopPropagation();">Read Docs</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>UX Prototype 02</strong> - Figma to HTML Conversion</p>
+        <p>Created with <a href="https://claude.ai/code">Claude Code</a> + Figma MCP Integration</p>
+        <p style="margin-top: 16px; font-size: 14px;">
+            All assets organized in <code>/images</code> • Responsive HTML/CSS • No frameworks required
+        </p>
+    </div>
+
+    <script>
+        // Add loading state visual feedback
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ Empire Popups Preview Loaded');
+            console.log('📁 4 Popups + 1 Interactive Map Available');
+            console.log('🎨 27 Assets Extracted + Map Backgrounds');
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') window.location.href = 'app/popup-pvp-expedition.html';
+            if (e.key === '2') window.location.href = 'app/popup-empire.html';
+            if (e.key === '4') window.location.href = 'app/map-prototype.html';
+            if (e.key === '3') window.location.href = 'app/popup-pve.html';
+            if (e.key === '4') window.open('FIGMA_EXTRACTION_SUMMARY.md', '_blank');
+        });
+    </script>
+</body>
+</html>

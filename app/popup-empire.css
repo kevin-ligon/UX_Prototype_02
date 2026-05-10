@@ -1,0 +1,235 @@
+/* Empire Popup Specific Styles */
+
+.popup-empire .popup-background {
+    max-width: 900px;
+}
+
+.empire-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Governor Section */
+.governor-section {
+    text-align: center;
+}
+
+.hero-card {
+    position: relative;
+    width: 177px;
+    height: 242px;
+    margin: 0 auto var(--spacing-md);
+}
+
+.hero-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hero-portrait {
+    position: absolute;
+    width: 158px;
+    height: 223px;
+    top: 9px;
+    left: 9px;
+    object-fit: cover;
+}
+
+.hero-level {
+    position: absolute;
+    bottom: 30px;
+    left: 33px;
+    font-size: 20px;
+    font-weight: 600;
+    font-style: italic;
+    text-transform: uppercase;
+    color: var(--color-white);
+}
+
+.hero-level span {
+    font-size: 44px;
+    font-weight: 900;
+    margin-left: 8px;
+}
+
+.hero-rank {
+    position: absolute;
+    bottom: -4px;
+    right: -10px;
+    width: 64px;
+    height: 67px;
+}
+
+.hero-notification {
+    position: absolute;
+    top: -4px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+}
+
+.hero-lock {
+    position: absolute;
+    top: 9px;
+    right: 15px;
+    width: 25px;
+    height: 30px;
+}
+
+.hero-icons {
+    position: absolute;
+    left: -7px;
+    top: -4px;
+}
+
+.hero-icons-bottom {
+    top: 34px;
+}
+
+.icon-bg {
+    width: 34px;
+    height: 34px;
+}
+
+.icon-rps,
+.icon-archetype {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 29px;
+    height: 29px;
+}
+
+.hero-name {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--color-white);
+    margin-top: var(--spacing-md);
+}
+
+/* Bonuses Section */
+.bonuses-section {
+    flex: 1;
+}
+
+.stat-row {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    min-height: 56px;
+}
+
+.stat-icon-lg {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.stat-value {
+    flex: 1;
+    font-size: 38px;
+    font-weight: bold;
+    text-align: right;
+    color: var(--color-white);
+}
+
+.stat-increase {
+    font-size: 38px;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--color-secondary);
+}
+
+.stat-arrow {
+    width: 26px;
+    height: 26px;
+}
+
+/* Map Icons */
+.map-icons-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+.map-icon-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1 1 200px;
+}
+
+.map-icon-item img {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+}
+
+.map-icon-item span {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+/* Empire Actions */
+.empire-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.btn-empire {
+    position: relative;
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border: 3px solid #ffcc00;
+    border-radius: 12px;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-family: var(--font-main);
+    font-size: 28px;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    color: var(--color-white);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 240px;
+    text-align: center;
+}
+
+.btn-empire:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn-notification {
+    position: absolute;
+    top: -3px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: #ff0066;
+    border-radius: 50%;
+}
+
+/* Tablet and Desktop */
+@media (min-width: 768px) {
+    .empire-layout {
+        grid-template-columns: auto 1fr;
+    }
+
+    .empire-actions {
+        flex-direction: row;
+        justify-content: center;
+    }
+}

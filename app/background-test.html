@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figma Background Test</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="popup-styles.css">
+
+    <style>
+        .test-container {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            padding: 32px;
+        }
+
+        .test-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #dd5be5;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .popup-test {
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 24px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div>
+            <div class="test-label">✨ Figma Authentic Border Frame</div>
+            <div class="popup-container">
+                <div class="popup-background popup-test">
+                    <p>9-Slice Border Frame<br>From Figma Design</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="test-label">📐 Resize Test - Border Scales Perfectly</div>
+            <div class="popup-container" style="max-width: 700px;">
+                <div class="popup-background popup-test">
+                    <p>Wider popup<br>Border adapts automatically</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="test-label">📱 Mobile Size Test</div>
+            <div class="popup-container" style="max-width: 350px;">
+                <div class="popup-background popup-test">
+                    <p>Narrow popup<br>Border still perfect</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
