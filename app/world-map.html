@@ -364,7 +364,9 @@
         .label-empire-z      { left: calc(32% - 20px); top: calc(50% + 20px); }
         .label-ravagers-z    { left: calc(53% - 50px); top: calc(38% - 20px); }
         .label-expedition-z  { left: calc(80% - 40px); top: calc(65% - 30px); }
-        .label-pve-z         { left: 92%; top: 5%; }
+        /* PVE island is mostly off-screen in the zoom-in view — hide its label
+           to avoid the dark pill overlapping the inventory bar in the corner */
+        .label-pve-z         { display: none; }
 
         /* === Zoom-in island UI: structures, monsters, badges === */
         .map-prop {
@@ -406,16 +408,53 @@
         .prop-tower-ravagers   { left: calc(53% - 50px); top: 18%; }
         .prop-tower-expedition { left: calc(80% - 40px); top: calc(50% - 20px); }
 
-        /* Roaming monsters on Empire */
+        /* Roaming monsters on Empire — pulsing red battle indicators */
         .prop-monster {
             width: clamp(30px, 3.5vw, 55px);
             opacity: 0.95;
         }
 
+        /* Override the default img drop-shadow with a pulsing red glow */
+        .prop-monster img {
+            animation: battlePulse 2.4s ease-in-out infinite;
+            filter: drop-shadow(0 0 6px rgba(255, 60, 40, 0.6))
+                    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            transform-origin: center;
+            will-change: transform, filter;
+        }
+
+        /* Subtle pulsing scale + red glow that swells and recedes */
+        @keyframes battlePulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 6px rgba(255, 60, 40, 0.55))
+                        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            }
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 0 18px rgba(255, 70, 50, 0.95))
+                        drop-shadow(0 0 30px rgba(255, 30, 20, 0.45))
+                        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            }
+        }
+
+        /* Stagger the animation so all 4 don't pulse in sync — feels more alive */
         .monster-1 { left: 14%; top: 58%; }
+        .monster-1 img { animation-delay: 0s; }
+
         .monster-2 { left: 28%; top: 75%; }
+        .monster-2 img { animation-delay: 0.6s; }
+
         .monster-3 { left: 35%; top: 48%; }
+        .monster-3 img { animation-delay: 1.2s; }
+
         .monster-4 { left: 42%; top: 72%; }
+        .monster-4 img { animation-delay: 1.8s; }
+
+        /* Pause animation when zoomed out (no point burning frames) */
+        .map-canvas[data-zoom="out"] .prop-monster img {
+            animation-play-state: paused;
+        }
 
         /* Score badges (e.g., 24/24) — small pill with PVP icon + count */
         .score-badge {
@@ -958,7 +997,6 @@
             <div class="alert-pip" data-zoom="in">
                 <img src="../assets/ui-elements/Notification Pip Large.png" alt="Alert">
             </div>
-
 
             <!-- TOP-LEFT: PLAYER PROFILE -->
             <div class="player-profile">
