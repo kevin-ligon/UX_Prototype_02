@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="badges.css">
+    <link rel="stylesheet" href="9slice.css">
+    <link rel="stylesheet" href="inventory.css">
     <link rel="stylesheet" href="debug-panel.css">
 
     <style>
@@ -850,46 +852,39 @@
         /* === Action buttons === */
         .popup-actions {
             display: flex;
-            gap: 3%;
+            gap: 24px;
             justify-content: center;
+            align-items: flex-end;
             margin-top: 2.5%;
         }
 
+        /* Popup action buttons — uses 9-slice cyan background.
+           Cost capsule lives in a sibling above (see .popup-action). */
         .popup-btn {
             position: relative;
-            width: 38%;
-            aspect-ratio: 280 / 70;
-            background: none;
-            border: none;
+            min-width: 200px;
+            min-height: 50px;
             cursor: pointer;
-            padding: 0;
-            transition: transform 0.15s;
-            display: flex;
+            transition: transform 0.15s, filter 0.15s;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            background: transparent;
         }
 
-        .popup-btn:hover { transform: translateY(-2px); }
-        .popup-btn:active { transform: translateY(0); }
-
-        .popup-btn-bg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: fill;
-        }
+        .popup-btn:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+        .popup-btn:active { transform: translateY(0);    filter: brightness(0.95); }
 
         .popup-btn-label {
-            position: relative;
-            font-size: clamp(12px, 1.3vw, 18px);
+            font-size: clamp(13px, 1.3vw, 18px);
             font-weight: 900;
             font-style: italic;
             color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-            z-index: 1;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            line-height: 1;
+            white-space: nowrap;
         }
 
         .popup-btn .pip {
@@ -979,7 +974,7 @@
                 <img src="../assets/ui-elements/map_image_tower_flag.png" alt="Tower">
             </div>
             <div class="score-badge badge-ravagers" data-zoom="in">
-                <img src="../images/icons/currency-energy.png" alt="" class="badge-icon">
+                <img src="../assets/icons/resource_energy.png" alt="" class="badge-icon">
                 <span>24/24</span>
             </div>
 
@@ -991,7 +986,7 @@
                 <img src="../assets/ui-elements/map_image_tower.png" alt="Tower">
             </div>
             <div class="score-badge badge-expedition" data-zoom="in">
-                <img src="../images/icons/currency-energy.png" alt="" class="badge-icon">
+                <img src="../assets/icons/resource_energy.png" alt="" class="badge-icon">
                 <span>24/24</span>
             </div>
 
@@ -1015,14 +1010,9 @@
                 </div>
             </div>
 
-            <!-- TOP-RIGHT: RESOURCES -->
-            <div class="resources">
-                <div class="resource"><img src="../images/icons/inventory_gold.png" alt="Gold"><span>1.5k</span></div>
-                <div class="resource"><img src="../images/icons/inventory_steel.png" alt="Steel"><span>1.5k</span></div>
-                <div class="resource"><img src="../images/icons/inventory_brass.png" alt="Brass"><span>1.5k</span></div>
-                <div class="resource"><img src="../images/icons/inventory_coal.png" alt="Coal"><span>1.5k</span></div>
-                <div class="resource"><img src="../images/icons/inventory_gold.png" alt="Fuel"><span>1.5k</span></div>
-            </div>
+            <!-- TOP-RIGHT: RESOURCES (rendered dynamically by inventory.js
+                 from primary resource set; configurable via debug panel) -->
+            <div class="resources" data-inventory-hud></div>
 
             <!-- LEFT HUD BUTTONS -->
             <div class="hud-btn btn-empire-summary" data-badge-target="empire-summary" data-badge-label="Empire Summary">
@@ -1072,9 +1062,7 @@
          POPUP: CAPITAL CITY (Empire)
          ================================================================ -->
     <div class="popup-overlay" id="popup-empire" onclick="if(event.target===this)closePopup()">
-        <div class="popup">
-            <img src="../assets/panels/Popup Background.png" alt="" class="popup-frame">
-
+        <div class="popup nslice-popup-dark">
             <button class="popup-close" onclick="closePopup()" aria-label="Close">
                 <img src="../assets/buttons/ui_btn_close.png" alt="">
             </button>
@@ -1147,18 +1135,35 @@
                     </div>
                 </div>
 
-                <!-- Action buttons -->
+                <!-- Action buttons (cost capsule above, action text inside) -->
                 <div class="popup-actions">
-                    <button class="popup-btn" data-badge-target="change-governor" data-badge-label="Change Governor">
-                        <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
-                        <span class="popup-btn-label">Change Governor</span>
-                        <span class="badge badge-dot" title="Governor change available"></span>
-                    </button>
-                    <button class="popup-btn" data-badge-target="enter-empire" data-badge-label="Enter Empire">
-                        <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
-                        <span class="popup-btn-label">Enter Empire</span>
-                        <span class="badge badge-arrow" title="Empire actions available">↑</span>
-                    </button>
+                    <div class="popup-action">
+                        <div class="cost-capsule nslice-bg-pill">
+                            <span class="cost-item" data-cost-resource="gold" data-cost-amount="250">
+                                <img src="../assets/icons/resource_gold.png" alt="" class="cost-icon">
+                                <span class="cost-amount">250</span>
+                            </span>
+                        </div>
+                        <button class="popup-btn nslice-btn-cyan" data-badge-target="change-governor"
+                                data-badge-label="Change Governor" data-cost='{"gold": 250}'>
+                            <span class="popup-btn-label">Change Governor</span>
+                            <span class="badge badge-dot" title="Governor change available"></span>
+                        </button>
+                    </div>
+
+                    <div class="popup-action">
+                        <div class="cost-capsule nslice-bg-pill">
+                            <span class="cost-item" data-cost-resource="fuel" data-cost-amount="100">
+                                <img src="../assets/icons/resource_energy.png" alt="" class="cost-icon">
+                                <span class="cost-amount">100</span>
+                            </span>
+                        </div>
+                        <button class="popup-btn nslice-btn-cyan" data-badge-target="enter-empire"
+                                data-badge-label="Enter Empire" data-cost='{"fuel": 100}'>
+                            <span class="popup-btn-label">Enter Empire</span>
+                            <span class="badge badge-arrow" title="Empire actions available">↑</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1217,6 +1222,8 @@
         setZoom('out');
     </script>
 
+    <!-- Player inventory system -->
+    <script src="inventory.js"></script>
     <!-- Notification debug panel (toggle with the bug button bottom-left or press D) -->
     <script src="debug-panel.js"></script>
 </body>

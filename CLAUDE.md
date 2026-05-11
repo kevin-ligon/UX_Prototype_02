@@ -105,6 +105,42 @@ After a role is selected: if it has an agent file in `.claude/agents/`, read tha
 - **Interactions:** Subtle hover states, smooth transitions
 - **Accessibility:** Alt text, ARIA labels, keyboard navigation
 
+### Buttons (MANDATORY)
+
+**Reference:** `Buttons.png` (Figma library) defines the convention.
+
+- **Primary (green) buttons** — RESERVED for key actions: **Battle**, **Level Up**, **Upgrade**.
+  Do not use the green primary style for navigation, governor changes, popup confirms, etc.
+- **Secondary (cyan) buttons** — every other action (view, enter, change, manage, etc.)
+- **Cost capsule lives ABOVE the button**, not inside. The button itself contains only
+  the action description text.
+  - Affordable: cost amount in white (e.g., `1.5k`)
+  - Insufficient: cost flips to `<have>/<need>` in red (e.g., `1.5k/5k`)
+  - Implementation: wrap each cost+button pair in `<div class="popup-action">`, with
+    a `.cost-capsule.nslice-bg-pill` above and a `.popup-btn.nslice-btn-cyan` below.
+
+### Backgrounds (9-slice)
+
+**Reference:** `app/9slice.css` provides utility classes.
+
+Most asset backgrounds in `assets/panels/` and the larger button assets in
+`assets/buttons/` are designed for **9-slice scaling**. NEVER stretch them with
+`object-fit: fill` or `background-size: cover` — the corners distort.
+
+Pick the closest 9-slice utility class and apply it to the element directly:
+- `nslice-popup-dark` / `nslice-popup-light` — popup frames
+- `nslice-bg-pill` — HUD pills, cost capsules, badges, list rows
+- `nslice-bg-square` / `nslice-bg-square-alt` — generic square panels
+- `nslice-bg-tooltip` — tooltips
+- `nslice-bg-stat` / `nslice-bg-list` / `nslice-bg-header` — table-like rows
+- `nslice-btn-cyan` — secondary action button (most uses)
+- `nslice-btn-cyan-icon` — small circular icon button
+- `nslice-btn-primary` — green primary (key actions only)
+- `nslice-btn-secondary-large` — large secondary
+
+If a needed background isn't in `9slice.css`, add a new utility class there with the
+correct slice values rather than inlining `border-image` per element.
+
 ### Notification Badges (MANDATORY)
 
 **Source of truth:** `NOTIFICATION_SYSTEM_GUIDE.md` (project root)

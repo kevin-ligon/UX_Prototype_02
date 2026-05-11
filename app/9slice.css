@@ -1,0 +1,146 @@
+/* ============================================================
+   9-SLICE BACKGROUND UTILITIES
+   ============================================================
+   Reusable border-image classes for the panel/button assets that
+   are designed to scale to any size without distortion.
+
+   Usage:
+     <div class="nslice-popup-dark">...</div>
+     <div class="nslice-bg-pill">...</div>
+     <button class="nslice-btn-cyan">...</button>
+
+   Slice values come from inspecting where each asset's "border"
+   pattern stops (the corners/caps) and the middle becomes a
+   stretchable solid band.
+   ============================================================ */
+
+/* ---- Popup frame (ornate purple, 512x512) ----
+   Use as the main popup background. Border-width is the visible
+   thickness; slice 90 carves the corner ornaments out of the source. */
+.nslice-popup-dark {
+    border-style: solid;
+    border-width: clamp(28px, 4.5vw, 56px);
+    border-image-source: url('../assets/panels/ui_bg_popup_dark.png');
+    border-image-slice: 90 fill;
+    border-image-repeat: stretch;
+    background-clip: border-box;
+}
+
+.nslice-popup-light {
+    border-style: solid;
+    border-width: clamp(28px, 4.5vw, 56px);
+    border-image-source: url('../assets/panels/ui_bg_popup_light.png');
+    border-image-slice: 90 fill;
+    border-image-repeat: stretch;
+}
+
+/* ---- Simple pill background (207x31, very thin border) ----
+   Perfect for HUD pills, cost capsules, badges, list rows. */
+.nslice-bg-pill {
+    border-style: solid;
+    border-width: 8px;
+    border-image-source: url('../assets/panels/ui_bg_square_simple.png');
+    border-image-slice: 10 fill;
+    border-image-repeat: stretch;
+}
+
+/* ---- Squared background w/ corners (112x112) ---- */
+.nslice-bg-square {
+    border-style: solid;
+    border-width: 12px;
+    border-image-source: url('../assets/panels/ui_bg_square.png');
+    border-image-slice: 16 fill;
+    border-image-repeat: stretch;
+}
+
+.nslice-bg-square-alt {
+    border-style: solid;
+    border-width: 12px;
+    border-image-source: url('../assets/panels/ui_bg_square_alt.png');
+    border-image-slice: 16 fill;
+    border-image-repeat: stretch;
+}
+
+/* ---- Tooltip background (47x47) ---- */
+.nslice-bg-tooltip {
+    border-style: solid;
+    border-width: 10px;
+    border-image-source: url('../assets/panels/ui_bg_tooltip.png');
+    border-image-slice: 12 fill;
+    border-image-repeat: stretch;
+}
+
+/* ---- Stat / list / header rows ---- */
+.nslice-bg-stat {
+    border-style: solid;
+    border-width: 8px;
+    border-image-source: url('../assets/panels/ui_bg_stat.png');
+    border-image-slice: 10 fill;
+    border-image-repeat: stretch;
+}
+
+.nslice-bg-list {
+    border-style: solid;
+    border-width: 8px;
+    border-image-source: url('../assets/panels/ui_bg_list.png');
+    border-image-slice: 10 fill;
+    border-image-repeat: stretch;
+}
+
+.nslice-bg-header {
+    border-style: solid;
+    border-width: 16px;
+    border-image-source: url('../assets/panels/ui_bg_header.png');
+    border-image-slice: 24 fill;
+    border-image-repeat: stretch;
+}
+
+/* ---- Buttons ---- */
+
+/* Cyan secondary button with yellow border (240x67) */
+.nslice-btn-cyan {
+    border-style: solid;
+    border-width: 14px 28px;
+    border-image-source: url('../assets/buttons/ui_btn_secondary_small_1.png');
+    border-image-slice: 20 35 fill;
+    border-image-repeat: stretch;
+    background: transparent;
+    padding: 0 12px;
+}
+
+/* Cyan secondary button alt (small_2 — circular icon button, 59x44) */
+.nslice-btn-cyan-icon {
+    border-style: solid;
+    border-width: 12px;
+    border-image-source: url('../assets/buttons/ui_btn_secondary_small_2.png');
+    border-image-slice: 14 fill;
+    border-image-repeat: stretch;
+}
+
+/* Big primary green button (485x134) */
+.nslice-btn-primary {
+    border-style: solid;
+    border-width: clamp(20px, 2.5vw, 36px) clamp(36px, 5vw, 70px);
+    border-image-source: url('../assets/buttons/ui_btn_primary.png');
+    border-image-slice: 50 fill;
+    border-image-repeat: stretch;
+    background: transparent;
+}
+
+.nslice-btn-primary-disabled {
+    border-style: solid;
+    border-width: clamp(20px, 2.5vw, 36px) clamp(36px, 5vw, 70px);
+    border-image-source: url('../assets/buttons/ui_btn_primary_disabled.png');
+    border-image-slice: 50 fill;
+    border-image-repeat: stretch;
+}
+
+/* Large secondary button (478x125) */
+.nslice-btn-secondary-large {
+    border-style: solid;
+    border-width: clamp(16px, 2vw, 28px) clamp(20px, 3vw, 40px);
+    border-image-source: url('../assets/buttons/ui_btn_secondary_large.png');
+    border-image-slice: 22 fill;
+    border-image-repeat: stretch;
+    background: transparent;
+}

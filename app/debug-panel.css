@@ -232,3 +232,103 @@
     background: rgba(221, 91, 229, 0.4);
     border-radius: 3px;
 }
+
+/* ===== TABS ===== */
+.debug-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(221, 91, 229, 0.3);
+}
+
+.debug-tab {
+    flex: 1;
+    padding: 8px 6px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #9e8cb2;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.debug-tab:hover {
+    color: #fff;
+    background: rgba(221, 91, 229, 0.08);
+}
+
+.debug-tab.active {
+    color: #dd5be5;
+    border-bottom-color: #dd5be5;
+}
+
+.debug-tab-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.debug-tab-panel[hidden] { display: none !important; }
+
+.debug-section-title {
+    padding: 10px 18px 4px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #dd5be5;
+    letter-spacing: 0.6px;
+}
+
+/* ===== INVENTORY ROWS ===== */
+
+.inv-row {
+    padding: 8px 10px;
+}
+
+.inv-primary-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+.inv-primary-toggle:hover { background: rgba(221, 91, 229, 0.1); }
+
+.inv-primary-toggle input[type="checkbox"] {
+    accent-color: #dd5be5;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.inv-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+.inv-amount {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 13px;
+    color: #fffbe4;
+    margin-left: auto;
+    min-width: 60px;
+    text-align: right;
+}
+
+.inv-quick {
+    margin-top: 6px;
+    gap: 4px;
+}
+.inv-quick .debug-btn {
+    padding: 4px 6px;
+    font-size: 10px;
+}

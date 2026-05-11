@@ -31,22 +31,49 @@
     panel.className = 'debug-panel';
     panel.innerHTML = `
         <div class="debug-header">
-            <div class="debug-title">Notification Debug</div>
-            <div class="debug-subtitle">Set badge state per element. Click a button on the map to auto-clear its badge.</div>
+            <div class="debug-title">Prototype Debug</div>
+            <div class="debug-subtitle">Configure notification badges and player inventory.</div>
         </div>
-        <div class="debug-stats">
-            <span class="debug-stats-label">Visible badges</span>
-            <span class="debug-stats-count" id="debugBadgeCount">0 / 7</span>
+
+        <!-- Tab switcher -->
+        <div class="debug-tabs">
+            <button class="debug-tab active" data-tab="badges">Badges</button>
+            <button class="debug-tab" data-tab="inventory">Inventory</button>
         </div>
-        <div class="debug-actions">
-            <button class="debug-btn" data-action="reset">Reset</button>
-            <button class="debug-btn" data-action="all-arrow">All ↑</button>
-            <button class="debug-btn" data-action="all-alert">All !</button>
-            <button class="debug-btn danger" data-action="clear">Clear All</button>
+
+        <!-- BADGES TAB -->
+        <div class="debug-tab-panel" data-panel="badges">
+            <div class="debug-stats">
+                <span class="debug-stats-label">Visible badges</span>
+                <span class="debug-stats-count" id="debugBadgeCount">0 / 7</span>
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn" data-action="reset">Reset</button>
+                <button class="debug-btn" data-action="all-arrow">All ↑</button>
+                <button class="debug-btn" data-action="all-alert">All !</button>
+                <button class="debug-btn danger" data-action="clear">Clear All</button>
+            </div>
+            <div class="debug-list" id="debugList"></div>
         </div>
-        <div class="debug-list" id="debugList"></div>
+
+        <!-- INVENTORY TAB -->
+        <div class="debug-tab-panel" data-panel="inventory" hidden>
+            <div class="debug-section-title">HUD Resources</div>
+            <div class="debug-subtitle" style="padding: 0 18px 8px;">
+                Toggle which resources show in the top-right HUD pills.
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn" data-action="inv-give-100">+100 each</button>
+                <button class="debug-btn" data-action="inv-spend-50">−50 each</button>
+                <button class="debug-btn danger" data-action="inv-zero">Zero out</button>
+                <button class="debug-btn" data-action="inv-reset">Reset</button>
+            </div>
+            <div class="debug-list" id="inventoryList"></div>
+        </div>
+
         <div class="debug-footer">
-            Press <kbd>D</kbd> to toggle. Click any map button to auto-clear its badge (per guide). NEW badges auto-clear after 30s in debug mode.
+            Press <kbd>D</kbd> to toggle. Click any badged map button to auto-clear its badge.
+            NEW badges auto-clear after 30s in debug mode.
         </div>
     `;
     document.body.appendChild(panel);
@@ -238,11 +265,133 @@
         if (e.key === 'd' || e.key === 'D') setOpen(!panel.classList.contains('open'));
     });
 
+    // ============================================================
+    // INVENTORY TAB
+    // ============================================================
+    const invListEl = panel.querySelector('#inventoryList');
+    const inventoryDefaults = {}; // snapshot of starting amounts for "Reset"
+
+    function renderInventoryList() {
+        if (!window.Inventory) return;
+        const all = window.Inventory.getAllResources();
+        if (Object.keys(inventoryDefaults).length === 0) {
+            all.forEach(r => { inventoryDefaults[r.id] = r.initial; });
+        }
+        const primarySet = new Set(window.Inventory.getPrimary());
+
+        const rows = all.map(r => {
+            const isPrimary = primarySet.has(r.id);
+            const current = window.Inventory.get(r.id);
+            return `
+                <div class="debug-item inv-row" data-resource="${r.id}">
+                    <div class="debug-item-row">
+                        <label class="inv-primary-toggle" title="Show in HUD">
+                            <input type="checkbox" data-inv-primary="${r.id}" ${isPrimary ? 'checked' : ''}>
+                            <img src="${r.icon}" alt="" class="inv-icon">
+                        </label>
+                        <span class="debug-item-name">${r.display}</span>
+                        <span class="inv-amount" data-inv-amount="${r.id}">${current.toLocaleString()}</span>
+                    </div>
+                    <div class="debug-item-row inv-quick">
+                        <button class="debug-btn" data-inv-give="${r.id}" data-amt="100">+100</button>
+                        <button class="debug-btn" data-inv-spend="${r.id}" data-amt="50">−50</button>
+                        <button class="debug-btn" data-inv-spend="${r.id}" data-amt="9999">Drain</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        invListEl.innerHTML = rows;
+
+        // Wire primary toggles
+        invListEl.querySelectorAll('[data-inv-primary]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checked = invListEl.querySelectorAll('[data-inv-primary]:checked');
+                const primaryIds = Array.from(checked).map(c => c.dataset.invPrimary);
+                window.Inventory.setPrimary(primaryIds);
+            });
+        });
+
+        // Wire +/-/drain buttons
+        invListEl.querySelectorAll('[data-inv-give]').forEach(b => {
+            b.addEventListener('click', () => {
+                window.Inventory.add(b.dataset.invGive, parseInt(b.dataset.amt, 10));
+                refreshAmounts();
+            });
+        });
+        invListEl.querySelectorAll('[data-inv-spend]').forEach(b => {
+            b.addEventListener('click', () => {
+                const r = b.dataset.invSpend;
+                const a = parseInt(b.dataset.amt, 10);
+                if (!window.Inventory.spend(r, a)) {
+                    window.Inventory.flashInsufficient(r);
+                }
+                refreshAmounts();
+            });
+        });
+    }
+
+    function refreshAmounts() {
+        if (!window.Inventory) return;
+        invListEl.querySelectorAll('[data-inv-amount]').forEach(el => {
+            el.textContent = window.Inventory.get(el.dataset.invAmount).toLocaleString();
+        });
+    }
+
+    // Subscribe to inventory changes so the panel stays in sync
+    function subscribeInventory() {
+        if (!window.Inventory || !window.Inventory.subscribe) return;
+        window.Inventory.subscribe((res, val) => {
+            const cell = invListEl.querySelector(`[data-inv-amount="${res}"]`);
+            if (cell) cell.textContent = val.toLocaleString();
+        });
+    }
+
+    // Quick-action buttons
+    panel.querySelectorAll('[data-action^="inv-"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!window.Inventory) return;
+            const action = btn.dataset.action;
+            const all = window.Inventory.getAllResources();
+            if (action === 'inv-give-100') {
+                all.forEach(r => window.Inventory.add(r.id, 100));
+            } else if (action === 'inv-spend-50') {
+                all.forEach(r => {
+                    if (!window.Inventory.spend(r.id, 50)) {
+                        window.Inventory.flashInsufficient(r.id);
+                    }
+                });
+            } else if (action === 'inv-zero') {
+                all.forEach(r => window.Inventory.set(r.id, 0));
+            } else if (action === 'inv-reset') {
+                all.forEach(r => window.Inventory.set(r.id, inventoryDefaults[r.id] || 0));
+            }
+            refreshAmounts();
+        });
+    });
+
+    // ============================================================
+    // TAB SWITCHER
+    // ============================================================
+    panel.querySelectorAll('.debug-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            panel.querySelectorAll('.debug-tab').forEach(t => t.classList.toggle('active', t === tab));
+            panel.querySelectorAll('.debug-tab-panel').forEach(p => {
+                p.hidden = (p.dataset.panel !== target);
+            });
+        });
+    });
+
     // --- Init ---------------------------------------------------
     function init() {
         discoverTargets();
         renderList();
         updateStats();
+        // Inventory may load slightly later — give it one tick
+        requestAnimationFrame(() => {
+            renderInventoryList();
+            subscribeInventory();
+        });
     }
 
     if (document.readyState === 'loading') {

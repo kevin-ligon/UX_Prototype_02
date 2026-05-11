@@ -1,0 +1,243 @@
+/* ============================================================
+   PLAYER INVENTORY SYSTEM — STYLES & ANIMATIONS
+   Pairs with inventory.js. Provides:
+     - Pill state animations (pulse on add, dim on spend, shake on insufficient)
+     - Floating delta numbers (+50 / -100) above the pill
+     - Cost display styling (gold by default, red when can't afford)
+   ============================================================ */
+
+/* -------- Pill state animations -------- */
+
+.resource {
+    overflow: visible;
+    transition: filter 0.18s ease;
+}
+
+/* Add: green flash + slight scale */
+.resource.inv-pulse-add {
+    animation: invPulseAdd 0.65s ease;
+}
+@keyframes invPulseAdd {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(55, 255, 94, 0);
+        transform: scale(1);
+    }
+    25% {
+        box-shadow: 0 0 14px 4px rgba(55, 255, 94, 0.85),
+                    inset 0 0 10px rgba(55, 255, 94, 0.4);
+        transform: scale(1.06);
+    }
+    60% {
+        box-shadow: 0 0 8px 2px rgba(55, 255, 94, 0.4);
+        transform: scale(1.02);
+    }
+}
+
+/* Spend: subtle dim + slight shrink */
+.resource.inv-pulse-spend {
+    animation: invPulseSpend 0.55s ease;
+}
+@keyframes invPulseSpend {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    35%      { transform: scale(0.95); filter: brightness(0.7); }
+    70%      { transform: scale(1.02); filter: brightness(1.05); }
+}
+
+/* Shake + red flash (insufficient funds) */
+.resource.inv-shake {
+    animation: invShake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes invShake {
+    0%, 100% {
+        transform: translateX(0);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    15%, 75% {
+        transform: translateX(-7px);
+        box-shadow: 0 0 18px 6px rgba(239, 68, 68, 0.85),
+                    inset 0 0 12px rgba(239, 68, 68, 0.5);
+    }
+    30%, 60% {
+        transform: translateX(6px);
+        box-shadow: 0 0 18px 6px rgba(239, 68, 68, 0.85),
+                    inset 0 0 12px rgba(239, 68, 68, 0.5);
+    }
+    45% {
+        transform: translateX(-3px);
+        box-shadow: 0 0 14px 4px rgba(239, 68, 68, 0.6);
+    }
+}
+
+/* -------- Floating delta numbers -------- */
+
+.inv-floater {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(12px, 1.1vw, 16px);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+    will-change: transform, opacity;
+}
+
+.inv-floater-add {
+    color: #5cff7a;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95),
+                 0 0 8px rgba(55, 255, 94, 0.6);
+    animation: invFloatUp 1.2s ease-out forwards;
+}
+
+.inv-floater-spend {
+    color: #ff6b6b;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95),
+                 0 0 8px rgba(239, 68, 68, 0.5);
+    animation: invFloatDown 1.2s ease-out forwards;
+}
+
+@keyframes invFloatUp {
+    0%   { transform: translate(0, -50%) scale(0.7); opacity: 0; }
+    18%  { transform: translate(0, -80%) scale(1.15); opacity: 1; }
+    100% { transform: translate(0, -180%) scale(1);    opacity: 0; }
+}
+
+@keyframes invFloatDown {
+    0%   { transform: translate(0, -50%) scale(0.7); opacity: 0; }
+    18%  { transform: translate(0, -30%) scale(1.15); opacity: 1; }
+    100% { transform: translate(0, 60%)  scale(1);    opacity: 0; }
+}
+
+/* ============================================================
+   COST DISPLAYS
+   Convention (per Figma button library):
+   - Costs live in their OWN dark capsule positioned ABOVE the
+     associated action button
+   - The button itself contains only the action description
+   - Affordable: white amount text on dark pill
+   - Insufficient: amount switches to "<have>/<need>" in red
+   ============================================================ */
+
+/* The capsule that sits above the action button */
+.cost-capsule {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 14px 4px 12px;
+    min-height: 28px;
+    line-height: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    /* When used with `nslice-bg-pill`, border-image provides the bg.
+       Fallback dark pill if 9-slice not applied: */
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+/* If a 9-slice background is applied, drop the fallback bg/border */
+.cost-capsule.nslice-bg-pill,
+.cost-capsule.nslice-bg-square,
+.cost-capsule.nslice-bg-tooltip {
+    background: transparent;
+    border-radius: 0;
+    /* nslice classes set their own border, so override the fallback border */
+    border-color: transparent;
+}
+
+/* For inline costs (without a separate capsule wrapper) */
+.cost-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.cost-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #fffbe4;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: clamp(12px, 1.1vw, 16px);
+    line-height: 1;
+    transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* Consistent cost icon size — single source of truth */
+.cost-item img,
+.cost-item .cost-icon {
+    width: clamp(18px, 1.6vw, 22px);
+    height: clamp(18px, 1.6vw, 22px);
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+    flex-shrink: 0;
+}
+
+.cost-amount { white-space: nowrap; }
+
+/* Insufficient state — red text + faint breathe */
+.cost-item.cost-insufficient {
+    color: #ff5959;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.55),
+                 0 1px 2px rgba(0, 0, 0, 0.9);
+    animation: invCostBreathe 1.6s ease-in-out infinite;
+}
+
+/* Affordable explicit-OK state (optional — green amount, e.g. "I have plenty") */
+.cost-item.cost-ok .cost-amount {
+    color: #5cff7a;
+}
+
+@keyframes invCostBreathe {
+    0%, 100% { transform: scale(1);    opacity: 1; }
+    50%      { transform: scale(1.08); opacity: 0.85; }
+}
+
+/* Click on unaffordable button → shake the cost capsule/display */
+.cost-display.cost-shake,
+.cost-capsule.cost-shake {
+    animation: invShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* ============================================================
+   ACTION-GROUP layout: cost capsule + button stacked vertically
+   Per Figma: cost sits directly above the button with a small
+   negative overlap so the bottom of the pill kisses the top of
+   the button.
+   ============================================================ */
+
+.popup-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+.popup-action .cost-capsule {
+    /* Pull the capsule down a few px so it overlaps the button top */
+    margin-bottom: -8px;
+    z-index: 2;
+    position: relative;
+}
+
+/* -------- Reduced motion -------- */
+@media (prefers-reduced-motion: reduce) {
+    .resource.inv-pulse-add,
+    .resource.inv-pulse-spend,
+    .resource.inv-shake,
+    .cost-display.cost-shake,
+    .cost-item.cost-insufficient,
+    .inv-floater-add,
+    .inv-floater-spend {
+        animation: none !important;
+    }
+}
