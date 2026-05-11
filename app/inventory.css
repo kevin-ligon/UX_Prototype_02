@@ -133,8 +133,8 @@
     align-items: center;
     justify-content: center;
     gap: 20px;
-    padding: 8px 28px 8px 24px;
-    min-height: 56px;
+    padding: 2px 28px 2px 24px;
+    min-height: 29px;        /* 36px × 0.8 — slim backing, icon overflows above/below */
     line-height: 1;
     font-family: 'Barlow Condensed', sans-serif;
     /* Fallback dark pill if no nslice class applied */
@@ -243,10 +243,18 @@
 }
 
 .popup-action .cost-capsule {
-    /* Sits flush above the button — no overlap */
+    /* Sits flush above the button. Lower z-index so the button asset
+       always renders ON TOP — the cost icon's overflow is masked by
+       the button visual. */
     margin-bottom: 0;
-    z-index: 2;
+    z-index: 1;
     position: relative;
+}
+
+/* Make sure the action button itself sits above the cost capsule */
+.popup-action .popup-btn {
+    position: relative;
+    z-index: 2;
 }
 
 /* -------- Reduced motion -------- */

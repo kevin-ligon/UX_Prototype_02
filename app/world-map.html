@@ -1239,7 +1239,8 @@
                             </span>
                         </div>
                         <button class="popup-btn nslice-btn-cyan" data-badge-target="enter-empire"
-                                data-badge-label="Enter Empire" data-cost='{"fuel": 100}'>
+                                data-badge-label="Enter Empire" data-cost='{"fuel": 100}'
+                                onclick="closePopup(); Menu.open('home-empire');">
                             <span class="popup-btn-label">Enter Empire</span>
                             <span class="badge badge-arrow" title="Empire actions available">↑</span>
                         </button>
@@ -1896,6 +1897,73 @@
                     </p>
                 </section>
             </main>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         FULL-SCREEN MENU: HOME EMPIRE
+         Opened from the Capital City popup → "Enter Empire" button.
+         Shows the player's territory map with HUD overlay and any
+         active battle/conquest indicators.
+         ================================================================ -->
+    <div class="fullscreen-menu" id="menu-home-empire">
+        <img class="menu-bg" src="../assets/backgrounds/Map Home Empire.png" alt="Home Empire">
+
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back to map">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">HOME EMPIRE</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+
+        <!-- Map overlay: HUD buttons + active battle indicators -->
+        <div class="empire-overlay">
+            <!-- LEFT HUD -->
+            <div class="hud-btn btn-empire-summary">
+                <span class="hud-btn-label">Empire<br>Summary</span>
+                <span class="badge badge-arrow">↑</span>
+            </div>
+            <div class="hud-btn btn-conquest-guide">
+                <span class="hud-btn-label">Conquest<br>Guide</span>
+                <span class="badge badge-dot"></span>
+            </div>
+
+            <!-- BOTTOM-LEFT: Heroes (large) + Buildings -->
+            <div class="heroes" onclick="Menu.open('buildings')">
+                <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
+                <span class="heroes-label">Army</span>
+            </div>
+            <div class="hud-btn btn-buildings" onclick="Menu.open('buildings')">
+                <span class="hud-btn-label">Buildings</span>
+                <span class="badge badge-arrow">↑</span>
+            </div>
+
+            <!-- RIGHT HUD -->
+            <div class="hud-btn btn-offers">
+                <span class="hud-btn-label">Offers</span>
+                <span class="badge badge-new">NEW</span>
+            </div>
+            <div class="hud-btn btn-store">
+                <span class="hud-btn-label">Store</span>
+                <span class="badge badge-dot"></span>
+            </div>
+
+            <!-- BOTTOM-RIGHT: Summon Hero -->
+            <div class="hud-btn hud-btn-large btn-summon">
+                <span class="hud-btn-label">Summon<br>Hero</span>
+                <span class="badge badge-dot"></span>
+            </div>
+
+            <!-- ACTIVE BATTLES — red oval glow + monster + countdown -->
+            <div class="active-battle" style="left: 27%; top: 8%;" title="Active battle">
+                <img src="../assets/ui-elements/map_roaming_monster.png" alt="Battle">
+                <span class="battle-timer">8d 8h 8m</span>
+            </div>
+            <div class="active-battle" style="left: 72%; top: 78%;" title="Active battle">
+                <img src="../assets/ui-elements/map_roaming_monster.png" alt="Battle">
+                <span class="battle-timer">8d 8h 8m</span>
+            </div>
         </div>
     </div>
 

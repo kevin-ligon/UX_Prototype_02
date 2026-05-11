@@ -126,7 +126,7 @@
     padding: 24px 16px 24px 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 46px;            /* 16px base + 30px additional between tabs */
     overflow-y: auto;
 }
 
@@ -186,19 +186,19 @@
     transition: filter 0.2s;
 }
 
-/* Active state: full asset (frame + glow) — frame ends up at the same
-   visual size as the inactive's 80%, with the glow filling the rest. */
+/* Active state: full asset (frame + glow) sized 10% larger than the
+   inactive frame so the active diamond reads as more prominent. */
 .tab-btn[data-active] .tab-diamond {
     background-image: url('../assets/panels/ui_bg_diamond_active.png');
-    background-size: contain;
+    background-size: 110%;
 }
 
 /* Tab icon (centered in diamond).
-   Deselected state is rendered 30% smaller than the active state to
-   reinforce the visual hierarchy of the selected tab. */
+   Deselected state is rendered substantially smaller than the active
+   state to reinforce the visual hierarchy of the selected tab. */
 .tab-icon {
-    width: 45.5%;       /* 65% × 0.7 — deselected (30% smaller) */
-    height: 45.5%;
+    width: 36.4%;       /* 65% × 0.7 × 0.8 — deselected (-30% then -20% more) */
+    height: 36.4%;
     object-fit: contain;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
     transition: width 180ms ease, height 180ms ease;
@@ -1028,3 +1028,152 @@
 
 /* Override upgrade-right to position relative for side-icons absolute */
 .upgrade-right.gen-right { position: relative; }
+
+/* ============================================================
+   HOME EMPIRE — fullscreen territory map
+   ============================================================
+   No tabs. Map background fills the area below the header,
+   HUD buttons float over the map (same style as world-map),
+   active battle indicators show on conquest zones.
+   ============================================================ */
+
+#menu-home-empire .menu-bg {
+    /* Cover the full menu area, including under the header */
+    object-fit: cover;
+}
+
+.empire-overlay {
+    position: absolute;
+    top: 130px;          /* below header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    pointer-events: none;  /* let interactive children re-enable */
+}
+
+.empire-overlay > * { pointer-events: auto; }
+
+/* ----- HUD buttons (reuse world-map .hud-btn look) ----- */
+
+.empire-overlay .hud-btn {
+    position: absolute;
+    width: clamp(50px, 5vw, 72px);
+    aspect-ratio: 1;
+    background: radial-gradient(circle at 30% 30%, #4a3070, #2a1850);
+    border: 3px solid #dd5be5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease,
+                box-shadow 140ms ease;
+}
+
+.empire-overlay .hud-btn:hover {
+    transform: scale(1.08);
+    filter: brightness(1.18);
+    box-shadow: 0 6px 18px rgba(221, 91, 229, 0.55);
+}
+
+.empire-overlay .hud-btn:active {
+    transform: scale(0.92);
+    filter: brightness(0.85);
+    transition-duration: 70ms;
+}
+
+.empire-overlay .hud-btn-large { width: clamp(72px, 7vw, 100px); }
+
+.empire-overlay .hud-btn-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(10px, 0.9vw, 13px);
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.05;
+    padding: 0 4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* HUD positions matching the world-map layout */
+.empire-overlay .btn-empire-summary  { top: 4%;  left: 1.5%; }
+.empire-overlay .btn-conquest-guide  { top: 18%; left: 1.5%; }
+.empire-overlay .btn-buildings       { bottom: 8%; left: 11%; }
+.empire-overlay .btn-offers          { top: 18%; right: 1.5%; }
+.empire-overlay .btn-store           { top: 32%; right: 1.5%; }
+.empire-overlay .btn-summon          { bottom: 8%; right: 1.5%; }
+
+/* Heroes / Army button (large flame icon, bottom-left) */
+.empire-overlay .heroes {
+    position: absolute;
+    bottom: 4%;
+    left: 1.2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+}
+
+.empire-overlay .heroes:hover  { transform: scale(1.06); filter: brightness(1.15); }
+.empire-overlay .heroes:active { transform: scale(0.93); filter: brightness(0.85); transition-duration: 70ms; }
+
+.empire-overlay .heroes img {
+    width: clamp(75px, 8.75vw, 125px);
+    height: clamp(75px, 8.75vw, 125px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 14px rgba(255, 165, 0, 0.7));
+}
+
+.empire-overlay .heroes-label {
+    font-size: clamp(10px, 1vw, 14px);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    margin-top: -20px;
+}
+
+/* ----- Active battle indicators (red oval + monster + timer) ----- */
+
+.active-battle {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+}
+
+.active-battle:hover  { transform: translate(-50%, -50%) scale(1.06); filter: brightness(1.1); }
+.active-battle:active { transform: translate(-50%, -50%) scale(0.95); transition-duration: 70ms; }
+
+.active-battle img {
+    width: clamp(60px, 7vw, 110px);
+    height: auto;
+    filter: drop-shadow(0 0 16px rgba(255, 60, 40, 0.8))
+            drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    animation: battlePulse 2.4s ease-in-out infinite;
+}
+
+.battle-timer {
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 4px;
+    padding: 3px 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(11px, 1vw, 16px);
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+    margin-top: -8px;
+    z-index: 1;
+}
