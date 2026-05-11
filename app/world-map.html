@@ -1285,7 +1285,7 @@
             </button>
 
             <div class="feature-popup-inner">
-                <h2 class="feature-popup-title">BOSS TOWER</h2>
+                <h2 class="feature-popup-title">TERRITORY NAME</h2>
 
                 <!-- Missions section -->
                 <section class="feature-section">
@@ -1301,6 +1301,7 @@
                 <!-- Potential rewards section -->
                 <section class="feature-section">
                     <span class="feature-section-label">Potential Rewards</span>
+                    <div class="reward-strip">
                     <div class="reward-grid">
                         <div class="reward-card" data-rarity="uncommon">
                             <img class="reward-icon" src="../assets/icons/ui_currency_fuel.png" alt="Fuel">
@@ -1338,6 +1339,7 @@
                             <span class="reward-count">x11</span>
                         </div>
                     </div>
+                    </div><!-- /.reward-strip -->
                 </section>
 
                 <!-- ENTER action: cost capsule + cyan secondary button -->
@@ -2076,7 +2078,7 @@
             <!-- INTERACTIVE TOWER — between the boss battle and the dungeon area,
                  ~50px up on the y-axis. Shows boss banner above. Click → popup. -->
             <div class="empire-tower"
-                 style="left: 38%; top: calc(31% - 50px);"
+                 style="left: calc(38% + 200px); top: calc(31% - 50px);"
                  title="Boss tower"
                  onclick="openPopup('feature-quest')">
                 <img class="empire-tower-banner"

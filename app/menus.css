@@ -639,11 +639,25 @@
 
 .feature-popup-inner {
     position: absolute;
-    inset: 5% 6% 5% 6%;
+    inset: 5% 6% 8% 6%;            /* extra bottom inset so the ENTER button has breathing room */
     display: flex;
     flex-direction: column;
     gap: 18px;
+    min-width: 0;                  /* allow reward-grid to scroll instead of expanding the popup */
+    /* No overflow:hidden — would clip the ENTER button.
+       Horizontal containment is handled by the inner reward-strip wrapper below. */
 }
+
+/* Wrapper around the reward grid that DOES clip horizontally.
+   This isolates the horizontal-scroll containment to the rewards
+   row only, so the rest of the popup (title, button) can render
+   freely. */
+.reward-strip {
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 0;
+}
+
 
 .feature-popup-title {
     font-family: 'Megazine Poster', 'Barlow Condensed', sans-serif;
@@ -662,6 +676,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-width: 0;     /* lets the reward-grid scroll instead of pushing wider */
 }
 
 .feature-section-header {
@@ -687,11 +702,38 @@
     text-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
 }
 
+/* Horizontally scrollable strip of reward cards.
+   Stays contained within the popup's inner area; if more cards
+   are added than fit, the row scrolls horizontally. */
 .reward-grid {
     display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    padding-bottom: 24px;  /* room for the "x11" count overflow */
+    gap: 12px;
+    padding: 4px 4px 28px;  /* 28px bottom for "x11" count overflow + scrollbar room */
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(221, 91, 229, 0.5) transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.reward-grid > .reward-card {
+    scroll-snap-align: start;
+}
+
+/* Custom scrollbar styling (WebKit) — thin purple bar to match the UI */
+.reward-grid::-webkit-scrollbar { height: 6px; }
+.reward-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+}
+.reward-grid::-webkit-scrollbar-thumb {
+    background: rgba(221, 91, 229, 0.5);
+    border-radius: 3px;
+}
+.reward-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(221, 91, 229, 0.8);
 }
 
 /* ----- Rank icon (overlaps the bottom-right corner) ----- */
