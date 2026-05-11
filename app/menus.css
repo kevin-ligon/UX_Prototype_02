@@ -1,0 +1,1030 @@
+/* ============================================================
+   FULL-SCREEN MENU SYSTEM
+   ============================================================
+   Reusable layout for full-screen menus (Buildings, Heroes,
+   Inventory, etc.) with a standard header + diamond-tab list +
+   content panel area.
+
+   Structure:
+     <div class="fullscreen-menu" id="menu-something">
+       <img class="menu-bg" src="...">
+       <header class="menu-header">
+         <button class="menu-back" data-menu-close>...</button>
+         <h1 class="menu-title">TITLE</h1>
+         <div class="menu-resources" data-inventory-hud></div>
+       </header>
+       <div class="menu-body">
+         <nav class="menu-tabs">
+           <button class="tab-btn" data-tab-id="x" data-active>...</button>
+         </nav>
+         <main class="menu-content">
+           <section class="menu-panel" data-tab-panel="x">...</section>
+         </main>
+       </div>
+     </div>
+   ============================================================ */
+
+.fullscreen-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    overflow: hidden;
+}
+
+.fullscreen-menu.open {
+    display: block;
+    opacity: 1;
+}
+
+.menu-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ----- Header bar ----- */
+.menu-header {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px 36px;
+    background: linear-gradient(180deg, rgba(15, 8, 28, 0.65) 0%, rgba(15, 8, 28, 0) 100%);
+}
+
+.menu-back {
+    flex-shrink: 0;
+    width: clamp(56px, 5vw, 90px);
+    height: clamp(56px, 5vw, 90px);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+}
+
+.menu-back img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+.menu-back:hover {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+}
+
+.menu-back:active {
+    transform: scale(0.92);
+    filter: brightness(0.85);
+    transition-duration: 70ms;
+}
+
+.menu-title {
+    flex: 1;
+    font-family: 'Megazine Poster', 'Barlow Condensed', sans-serif;
+    font-size: clamp(32px, 4vw, 54px);
+    font-weight: 400;
+    font-style: italic;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7),
+                 0 0 12px rgba(0, 0, 0, 0.4);
+    line-height: 1;
+    margin: 0;
+}
+
+.menu-resources {
+    display: flex;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+/* ----- Body: tabs + content ----- */
+.menu-body {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    height: calc(100% - 130px);  /* below header */
+    padding: 0 0 24px 0;
+}
+
+.menu-tabs {
+    flex-shrink: 0;
+    width: clamp(200px, 20vw, 320px);
+    padding: 24px 16px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.menu-content {
+    flex: 1;
+    padding: 24px 36px 24px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-panel {
+    width: 100%;
+}
+
+.menu-panel[hidden] { display: none; }
+
+/* ============================================================
+   DIAMOND TAB BUTTONS
+   ============================================================ */
+
+.tab-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    height: clamp(80px, 10vh, 140px);
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+    text-align: left;
+}
+
+.tab-btn:hover  { transform: scale(1.04); filter: brightness(1.1); }
+.tab-btn:active { transform: scale(0.96); filter: brightness(0.9); transition-duration: 70ms; }
+
+/* Diamond background container.
+   The active asset includes a glow halo that takes up ~20% of the image,
+   so the actual diamond frame inside it appears at ~80% of the image.
+   We scale the inactive asset to 80% as well so both frames match
+   visually; the active's glow then extends to the full container.
+*/
+.tab-diamond {
+    position: relative;
+    flex-shrink: 0;
+    width: clamp(90px, 9vw, 140px);
+    aspect-ratio: 1;
+    background-image: url('../assets/panels/ui_bg_diamond.png');
+    background-size: 80%;            /* match the active diamond's frame size */
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s;
+}
+
+/* Active state: full asset (frame + glow) — frame ends up at the same
+   visual size as the inactive's 80%, with the glow filling the rest. */
+.tab-btn[data-active] .tab-diamond {
+    background-image: url('../assets/panels/ui_bg_diamond_active.png');
+    background-size: contain;
+}
+
+/* Tab icon (centered in diamond).
+   Deselected state is rendered 30% smaller than the active state to
+   reinforce the visual hierarchy of the selected tab. */
+.tab-icon {
+    width: 45.5%;       /* 65% × 0.7 — deselected (30% smaller) */
+    height: 45.5%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+    transition: width 180ms ease, height 180ms ease;
+}
+
+/* Active tab restores the icon to its full size */
+.tab-btn[data-active] .tab-icon {
+    width: 65%;
+    height: 65%;
+}
+
+/* Tab label */
+.tab-label {
+    margin-left: 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(16px, 1.6vw, 22px);
+    font-weight: 600;
+    color: #b6abb8;
+    line-height: 1.1;
+    transition: color 0.2s ease;
+    max-width: 140px;
+}
+
+.tab-btn[data-active] .tab-label {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Badge on tab (positioned between icon and label) */
+.tab-btn .badge {
+    top: 50%;
+    right: auto;
+    left: clamp(95px, 10vw, 150px);
+    transform: translateY(-50%);
+}
+
+/* ============================================================
+   BUILDING CARD GRID
+   ============================================================ */
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    padding: 8px 0;
+}
+
+.building-card {
+    position: relative;
+    aspect-ratio: 279 / 374;
+    background: linear-gradient(180deg, #2a1850 0%, #1a0f2e 100%);
+    border: 3px solid rgba(221, 91, 229, 0.5);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease,
+                border-color 140ms ease,
+                box-shadow 140ms ease;
+    display: flex;
+    flex-direction: column;
+    /* IMPORTANT: do NOT set overflow:hidden here — it would clip the
+       notification badge that extends past the top-right corner.
+       Inner image container (.building-card-image) has its own clip. */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.building-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    filter: brightness(1.1);
+    border-color: #dd5be5;
+    box-shadow: 0 8px 24px rgba(221, 91, 229, 0.45);
+}
+
+.building-card:active {
+    transform: translateY(0) scale(0.98);
+    filter: brightness(0.92);
+    transition-duration: 70ms;
+}
+
+/* Building image (the main artwork)
+   This is the only place that clips inside the card — the card itself
+   stays overflow:visible so the notification badge can extend past the
+   top-right corner. */
+.building-card-image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 12px 12px;
+    overflow: hidden;
+    border-radius: 9px 9px 0 0; /* matches card border-radius minus the 3px border */
+}
+
+.building-card-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+/* Small archetype icon (top-left) */
+.card-archetype {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: clamp(40px, 4.5vw, 56px);
+    aspect-ratio: 1;
+    z-index: 3;
+    background: url('../assets/panels/ui_bg_card_icon.png') center/contain no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+}
+
+.card-archetype img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+
+/* Level backing strip (bottom of card)
+   No negative margins — keeps the strip inside the card so the parent
+   doesn't need overflow:hidden (which would clip notification badges). */
+.card-level-strip {
+    position: relative;
+    height: clamp(48px, 5vh, 70px);
+    background: url('../assets/panels/ui_bg_card_levelbacking.png') center/100% 100% no-repeat;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    z-index: 2;
+    border-radius: 0 0 9px 9px; /* round the bottom corners to match card */
+}
+
+.card-level-strip .level-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(14px, 1.3vw, 20px);
+    font-weight: 700;
+    font-style: italic;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+    margin-right: 8px;
+}
+
+.card-level-strip .level-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(28px, 3vw, 48px);
+    font-weight: 900;
+    font-style: italic;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.card-level-strip .rank-icon {
+    margin-left: auto;
+    width: clamp(36px, 3.5vw, 56px);
+    height: clamp(36px, 3.5vw, 56px);
+    object-fit: contain;
+}
+
+/* Card-level notification badge — overlap top-right corner.
+   High z-index so it renders above the card image, archetype icon,
+   and level strip even when they share a stacking context. */
+.building-card .badge,
+.hero-card .badge,
+.troop-card .badge {
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+    z-index: 20;
+}
+
+/* ============================================================
+   COLLECTION BUTTON SLOT (top of tab list)
+   Shown when user navigates here from somewhere OTHER than
+   the Building Collection menu (e.g., a territory map prop).
+   When `.menu-tabs` has class `has-collection-slot`, the tabs
+   reserve vertical space at the top for this button.
+   ============================================================ */
+.menu-tabs.has-collection-slot {
+    padding-top: 96px; /* reserves space for the Collection button */
+    position: relative;
+}
+
+.menu-collection-btn {
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba(221, 91, 229, 0.45);
+    border-radius: 10px;
+    color: #ffffff;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(11px, 1.1vw, 14px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease,
+                border-color 140ms ease;
+    text-align: left;
+    line-height: 1.1;
+}
+
+.menu-collection-btn[hidden] { display: none; }
+
+.menu-collection-btn:hover {
+    transform: scale(1.03);
+    filter: brightness(1.15);
+    border-color: #dd5be5;
+}
+
+.menu-collection-btn:active {
+    transform: scale(0.95);
+    filter: brightness(0.85);
+    transition-duration: 70ms;
+}
+
+.menu-collection-btn .grid-glyph {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    width: 36px;
+    height: 28px;
+}
+
+.menu-collection-btn .grid-glyph span {
+    background: #ffffff;
+    border-radius: 1px;
+}
+
+/* ============================================================
+   UPGRADE MENU LAYOUT
+   ============================================================
+   Center: arrows + building image + level "X / 10"
+   Right:  unit type / description / stats list
+   Bottom: progress bar (10 nodes) + cost + UPGRADE button
+   ============================================================ */
+
+.upgrade-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 16px;
+}
+
+.upgrade-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    min-height: 0;
+}
+
+/* ---- Center: arrows + building + level ---- */
+.upgrade-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+}
+
+.building-nav-arrow {
+    flex-shrink: 0;
+    width: clamp(32px, 3vw, 48px);
+    aspect-ratio: 40 / 60;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+}
+
+.building-nav-arrow img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.building-nav-prev img { transform: scaleX(-1); }
+
+.building-nav-arrow:hover  { transform: scale(1.1); filter: brightness(1.15); }
+.building-nav-arrow:active { transform: scale(0.92); filter: brightness(0.85); transition-duration: 70ms; }
+
+.upgrade-building {
+    flex: 1;
+    max-width: 540px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.upgrade-building-image {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.upgrade-building-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55));
+}
+
+/* "LV 3 / 10" badge below the building image */
+.upgrade-level-display {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 32px 6px 24px;
+    min-height: 52px;
+}
+
+.upgrade-level-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('../assets/panels/ui_bg_card_levelbacking.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    z-index: 0;
+}
+
+.upgrade-level-display .level-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-style: italic;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+}
+
+.level-text .level-prefix {
+    font-size: clamp(14px, 1.4vw, 22px);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.level-text .level-current {
+    font-size: clamp(28px, 3vw, 44px);
+    font-weight: 900;
+}
+
+.level-text .level-divider {
+    font-size: clamp(20px, 2.2vw, 30px);
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.level-text .level-max {
+    font-size: clamp(18px, 1.9vw, 26px);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- Right: unit type, description, stats ---- */
+.upgrade-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.upgrade-unit-type {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.upgrade-unit-type .archetype-badge {
+    width: clamp(56px, 5.5vw, 80px);
+    aspect-ratio: 1;
+    background: url('../assets/panels/ui_bg_card_icon.png') center/contain no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    flex-shrink: 0;
+}
+
+.upgrade-unit-type .archetype-badge img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+
+.upgrade-unit-type .unit-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.1;
+}
+
+.upgrade-unit-type .unit-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(13px, 1.2vw, 18px);
+    font-weight: 600;
+    color: #b6abb8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upgrade-unit-type .unit-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(22px, 2.2vw, 32px);
+    font-weight: 900;
+    font-style: italic;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.upgrade-divider {
+    height: 2px;
+    border: none;
+    background: linear-gradient(90deg, transparent 0%, rgba(221, 91, 229, 0.4) 50%, transparent 100%);
+    margin: 4px 0;
+}
+
+.upgrade-description {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(221, 91, 229, 0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(12px, 1.1vw, 16px);
+    color: #d8c8e0;
+    line-height: 1.4;
+}
+
+.upgrade-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.upgrade-stats h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(13px, 1.2vw, 17px);
+    font-weight: 700;
+    color: #b6abb8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0 4px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 6px;
+    padding: 6px 14px;
+    border-left: 2px solid rgba(221, 91, 229, 0.25);
+}
+
+.stat-row .stat-icon {
+    width: clamp(20px, 2vw, 28px);
+    height: clamp(20px, 2vw, 28px);
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.stat-row .stat-name {
+    flex: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(13px, 1.2vw, 17px);
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.stat-row .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(14px, 1.3vw, 18px);
+    font-weight: 700;
+    color: #fffbe4;
+    min-width: 56px;
+    text-align: right;
+}
+
+.stat-row .stat-bonus {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(13px, 1.2vw, 17px);
+    font-weight: 800;
+    color: #5cff7a;
+    min-width: 48px;
+    text-align: right;
+    text-shadow: 0 0 6px rgba(55, 255, 94, 0.4);
+}
+
+/* ---- Bottom bar: progress + cost + upgrade button ---- */
+.upgrade-bottom {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 18px 24px;
+    background: linear-gradient(180deg, rgba(15, 8, 28, 0.6) 0%, rgba(15, 8, 28, 0.95) 100%);
+    border-top: 2px solid rgba(221, 91, 229, 0.3);
+    border-radius: 12px;
+    margin: 0 -12px -12px;
+}
+
+.upgrade-progress {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.progress-level-label {
+    flex-shrink: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(14px, 1.4vw, 20px);
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.progress-level-label .level-current {
+    font-size: clamp(20px, 2vw, 28px);
+    font-weight: 900;
+    font-style: italic;
+    color: #5cff7a;
+    margin-left: 4px;
+    text-shadow: 0 0 8px rgba(55, 255, 94, 0.5);
+}
+
+/* The 10-node level track */
+.level-track {
+    flex: 1;
+    position: relative;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 0 12px;
+}
+
+.level-track-fill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    background: linear-gradient(90deg, #37ff5e 0%, #5cff7a 100%);
+    border-radius: 14px;
+    box-shadow: 0 0 12px rgba(55, 255, 94, 0.5);
+    z-index: 0;
+    transition: width 0.4s ease;
+}
+
+.level-nodes {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.level-node {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.level-node.complete {
+    background: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+.level-node.current {
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    border: 3px solid #37ff5e;
+    box-shadow: 0 0 12px rgba(55, 255, 94, 0.9);
+    position: relative;
+}
+
+.level-node.current::after {
+    content: '✓';
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: #37ff5e;
+    text-shadow: 0 0 8px rgba(55, 255, 94, 0.8),
+                 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Next-rank icon block at the right end of progress */
+.next-rank-block {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.next-rank-block .next-rank-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(10px, 1vw, 13px);
+    font-weight: 700;
+    color: #b6abb8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.next-rank-block .rank-icon {
+    width: clamp(40px, 3.5vw, 56px);
+    height: clamp(40px, 3.5vw, 56px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(221, 91, 229, 0.5));
+}
+
+/* The right-side action group (cost + UPGRADE button) */
+.upgrade-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.upgrade-action .cost-capsule {
+    margin-bottom: -12px;
+    z-index: 2;
+    position: relative;
+}
+
+/* ============================================================
+   GREEN PRIMARY BUTTON (key actions: BATTLE, LEVEL UP, UPGRADE)
+   Renders at the asset's native 1:1 pixel dimensions (485 × 134),
+   not 9-sliced — preserves the ornate green chevron shape exactly
+   as designed.
+
+   The selectors below use compound specificity (.popup-btn.btn-...)
+   so they win against the generic `.popup-btn { background: transparent }`
+   defined in world-map.html's inline <style>.
+   ============================================================ */
+.btn-green-primary,
+.popup-btn.btn-green-primary {
+    width: 485px;
+    height: 134px;
+    min-width: 485px;
+    min-height: 134px;
+    background: url('../assets/buttons/ui_btn_primary.png') center / 100% 100% no-repeat;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.btn-green-primary[disabled],
+.btn-green-primary.is-disabled,
+.popup-btn.btn-green-primary[disabled] {
+    background-image: url('../assets/buttons/ui_btn_primary_disabled.png');
+    cursor: not-allowed;
+}
+
+/* The UPGRADE label inside the green button — sized to read clearly
+   against the 485x134 native canvas. */
+.btn-green-primary .popup-btn-label,
+.popup-btn.btn-green-primary .popup-btn-label {
+    font-size: 48px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 2px;
+    color: #ffffff;
+    text-shadow: 0 3px 4px rgba(0, 0, 0, 0.7),
+                 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   RESOURCE GENERATOR upgrade — variant of upgrade-right
+   Two big stat highlights (Production Rate / Capacity) at top,
+   then description, then "Level Up and Increase" stat list.
+   ============================================================ */
+
+.gen-highlights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.gen-highlight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gen-highlight .highlight-badge {
+    width: clamp(56px, 5vw, 72px);
+    aspect-ratio: 1;
+    background: url('../assets/panels/ui_bg_card_icon.png') center/contain no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    flex-shrink: 0;
+}
+
+.gen-highlight .highlight-badge img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+
+.gen-highlight .highlight-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.05;
+    min-width: 0;
+}
+
+.highlight-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(11px, 1.05vw, 15px);
+    font-weight: 600;
+    color: #b6abb8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.highlight-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(22px, 2.4vw, 36px);
+    font-weight: 900;
+    font-style: italic;
+    color: #ffffff;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.highlight-value .unit {
+    font-weight: 700;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+    margin-left: 2px;
+    font-size: 0.7em;
+}
+
+/* Side info buttons on the upgrade screen */
+.upgrade-side-icons {
+    position: absolute;
+    left: -88px;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+    z-index: 2;
+}
+
+.upgrade-side-icon {
+    width: clamp(48px, 4vw, 64px);
+    aspect-ratio: 1;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(221, 91, 229, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+    padding: 8px;
+}
+
+.upgrade-side-icon:hover {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+    border-color: #dd5be5;
+}
+
+.upgrade-side-icon:active {
+    transform: scale(0.92);
+    filter: brightness(0.85);
+    transition-duration: 70ms;
+}
+
+.upgrade-side-icon img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+}
+
+/* Override upgrade-right to position relative for side-icons absolute */
+.upgrade-right.gen-right { position: relative; }

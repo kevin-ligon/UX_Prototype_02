@@ -47,6 +47,40 @@
 }
 
 /* ------------------------------------------------------------
+   PER-SHAPE OVERRIDES — badges should sit at the top-right corner
+   with the badge CENTER on the corner: ~half outside, half overlapping.
+   Match the Figma button library reference.
+   ------------------------------------------------------------ */
+
+/* Circular HUD buttons (border-radius 50%): the visible circle's
+   upper-right edge (45° point) sits at ~(85.4%, 14.6%) of the bounding box.
+   Anchor at (top:14.6%, right:14.6%), then translate so the badge CENTER
+   lands exactly on the curve — half-on, half-off. */
+.hud-btn .badge,
+.hud-btn-large .badge {
+    top: 14.6%;
+    right: 14.6%;
+    transform: translate(50%, -50%);
+}
+
+/* Cyan rectangular 9-slice buttons (popup / action): badge sits at the
+   bounding-box corner, mostly outside, slight overlap on the chamfered cap. */
+.popup-btn .badge,
+.nslice-btn-cyan .badge {
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+}
+
+/* Banner items (boss / dungeon / fuel) — small map icons.
+   Same corner-overlap behavior. */
+.banner-item .badge {
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+}
+
+/* ------------------------------------------------------------
    1. RED DOT — general low-priority notification
       "Something happened, look here when you can."
    ------------------------------------------------------------ */

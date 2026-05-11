@@ -123,31 +123,51 @@
    - Insufficient: amount switches to "<have>/<need>" in red
    ============================================================ */
 
-/* The capsule that sits above the action button */
+/* The capsule that sits above the action button (sized 2x for prominence).
+   IMPORTANT: do NOT use the `border` shorthand here — the shorthand resets
+   `border-image` to none, which would wipe out any 9-slice background
+   applied via .nslice-bg-* classes. Use individual border-* properties so
+   the nslice can override only what it needs. */
 .cost-capsule {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 4px 14px 4px 12px;
-    min-height: 28px;
+    gap: 20px;
+    padding: 8px 28px 8px 24px;
+    min-height: 56px;
     line-height: 1;
     font-family: 'Barlow Condensed', sans-serif;
-    /* When used with `nslice-bg-pill`, border-image provides the bg.
-       Fallback dark pill if 9-slice not applied: */
+    /* Fallback dark pill if no nslice class applied */
     background: rgba(0, 0, 0, 0.85);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
+    border-radius: 12px;
 }
 
-/* If a 9-slice background is applied, drop the fallback bg/border */
+/* Fallback border ONLY when no 9-slice background class is present */
+.cost-capsule:not([class*="nslice"]) {
+    border-style: solid;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Cost items inside a capsule render larger to match the capsule size */
+.cost-capsule .cost-item {
+    font-size: clamp(22px, 2.2vw, 32px);
+    gap: 12px;
+}
+
+.cost-capsule .cost-item img,
+.cost-capsule .cost-item .cost-icon {
+    width: clamp(36px, 3.2vw, 44px);
+    height: clamp(36px, 3.2vw, 44px);
+}
+
+/* When a 9-slice bg is applied, drop the fallback fill — nslice provides it */
 .cost-capsule.nslice-bg-pill,
 .cost-capsule.nslice-bg-square,
-.cost-capsule.nslice-bg-tooltip {
+.cost-capsule.nslice-bg-tooltip,
+.cost-capsule.nslice-bg-list {
     background: transparent;
     border-radius: 0;
-    /* nslice classes set their own border, so override the fallback border */
-    border-color: transparent;
 }
 
 /* For inline costs (without a separate capsule wrapper) */
@@ -223,8 +243,8 @@
 }
 
 .popup-action .cost-capsule {
-    /* Pull the capsule down a few px so it overlaps the button top */
-    margin-bottom: -8px;
+    /* Sits flush above the button — no overlap */
+    margin-bottom: 0;
     z-index: 2;
     position: relative;
 }

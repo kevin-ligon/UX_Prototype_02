@@ -81,9 +81,9 @@
 
 .nslice-bg-list {
     border-style: solid;
-    border-width: 8px;
+    border-width: 12px;
     border-image-source: url('../assets/panels/ui_bg_list.png');
-    border-image-slice: 10 fill;
+    border-image-slice: 14 fill;
     border-image-repeat: stretch;
 }
 
@@ -117,23 +117,9 @@
     border-image-repeat: stretch;
 }
 
-/* Big primary green button (485x134) */
-.nslice-btn-primary {
-    border-style: solid;
-    border-width: clamp(20px, 2.5vw, 36px) clamp(36px, 5vw, 70px);
-    border-image-source: url('../assets/buttons/ui_btn_primary.png');
-    border-image-slice: 50 fill;
-    border-image-repeat: stretch;
-    background: transparent;
-}
-
-.nslice-btn-primary-disabled {
-    border-style: solid;
-    border-width: clamp(20px, 2.5vw, 36px) clamp(36px, 5vw, 70px);
-    border-image-source: url('../assets/buttons/ui_btn_primary_disabled.png');
-    border-image-slice: 50 fill;
-    border-image-repeat: stretch;
-}
+/* NOTE: The big green primary button (`ui_btn_primary.png`) is intentionally
+   NOT 9-sliced — it renders at its native 1:1 pixel dimensions (485 × 134).
+   See `.btn-green-primary` in `menus.css`. */
 
 /* Large secondary button (478x125) */
 .nslice-btn-secondary-large {

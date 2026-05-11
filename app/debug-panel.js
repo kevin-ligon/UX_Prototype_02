@@ -39,6 +39,7 @@
         <div class="debug-tabs">
             <button class="debug-tab active" data-tab="badges">Badges</button>
             <button class="debug-tab" data-tab="inventory">Inventory</button>
+            <button class="debug-tab" data-tab="positions">Positions</button>
         </div>
 
         <!-- BADGES TAB -->
@@ -54,6 +55,19 @@
                 <button class="debug-btn danger" data-action="clear">Clear All</button>
             </div>
             <div class="debug-list" id="debugList"></div>
+        </div>
+
+        <!-- POSITIONS TAB -->
+        <div class="debug-tab-panel" data-panel="positions" hidden>
+            <div class="debug-section-title">Notification Badge Positions</div>
+            <div class="debug-subtitle" style="padding: 0 18px 8px;">
+                Live-edit badge anchor offsets per element category.
+                Changes apply globally and persist (localStorage).
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn danger" data-action="pos-reset-all">Reset All</button>
+            </div>
+            <div class="debug-list" id="positionList"></div>
         </div>
 
         <!-- INVENTORY TAB -->
@@ -370,6 +384,210 @@
     });
 
     // ============================================================
+    // POSITIONS TAB
+    // ============================================================
+    // Live-edits the CSS for badge positions per element category.
+    // Values are written into a <style id="debug-badge-positions">
+    // element so they cascade-override the rules in badges.css/menus.css.
+    const POSITION_CATEGORIES = [
+        {
+            id: 'hud',
+            label: 'Map HUD Buttons',
+            note: 'Empire Summary, Conquest, Buildings, Offers, Store, Summon Hero',
+            selector: '.hud-btn .badge, .hud-btn-large .badge',
+            defaults: { top: '14.6%', right: '14.6%', left: '', tx: '50%', ty: '-50%' },
+        },
+        {
+            id: 'std',
+            label: 'Standard Buttons (cyan + green)',
+            note: 'Popup buttons, UPGRADE, Change Governor, Enter Empire',
+            selector: '.popup-btn .badge, .nslice-btn-cyan .badge, .btn-green-primary .badge',
+            defaults: { top: '0', right: '0', left: '', tx: '50%', ty: '-50%' },
+        },
+        {
+            id: 'tab',
+            label: 'Tab Buttons (diamond)',
+            note: 'Fullscreen menu side tabs',
+            selector: '.tab-btn .badge',
+            defaults: { top: '50%', right: 'auto', left: 'clamp(95px, 10vw, 150px)', tx: '0', ty: '-50%' },
+        },
+        {
+            id: 'card',
+            label: 'Card Buttons (building / hero / troop)',
+            note: 'Building cards, hero cards, troop cards',
+            selector: '.building-card .badge, .hero-card .badge, .troop-card .badge',
+            defaults: { top: '0', right: '0', left: '', tx: '50%', ty: '-50%' },
+        },
+    ];
+
+    const POS_STORAGE_KEY = 'debug-badge-positions';
+    let positionState = {};
+
+    // Load persisted state, or initialize from defaults
+    function initPositionState() {
+        try {
+            positionState = JSON.parse(localStorage.getItem(POS_STORAGE_KEY) || '{}');
+        } catch (e) {
+            positionState = {};
+        }
+        for (const cat of POSITION_CATEGORIES) {
+            if (!positionState[cat.id]) positionState[cat.id] = { ...cat.defaults };
+            // Backfill any missing keys (in case defaults expanded since last save)
+            for (const k of Object.keys(cat.defaults)) {
+                if (positionState[cat.id][k] === undefined) {
+                    positionState[cat.id][k] = cat.defaults[k];
+                }
+            }
+        }
+    }
+
+    // Generate the live CSS and inject
+    function applyPositions() {
+        let css = '/* Live badge positions from debug panel */\n';
+        for (const cat of POSITION_CATEGORIES) {
+            const s = positionState[cat.id];
+            const left = s.left ? `left: ${s.left} !important;` : 'left: auto !important;';
+            const right = s.right ? `right: ${s.right} !important;` : 'right: auto !important;';
+            const transform = `translate(${s.tx || '0'}, ${s.ty || '0'})`;
+            css += `${cat.selector} {\n`;
+            css += `    top: ${s.top || 'auto'} !important;\n`;
+            css += `    ${right}\n`;
+            css += `    ${left}\n`;
+            css += `    transform: ${transform} !important;\n`;
+            css += `}\n`;
+        }
+        let styleEl = document.getElementById('debug-badge-positions');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'debug-badge-positions';
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = css;
+        try { localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(positionState)); }
+        catch (e) { /* ignore quota */ }
+    }
+
+    // Per-property slider config (min/max/step) — different ranges per axis
+    const POS_PROP_CONFIG = {
+        top:   { min: -100, max: 200, step: 0.1, defaultUnit: '%' },
+        right: { min: -100, max: 200, step: 0.1, defaultUnit: '%' },
+        left:  { min: -100, max: 200, step: 0.1, defaultUnit: '%' },
+        tx:    { min: -150, max: 150, step: 0.1, defaultUnit: '%' },
+        ty:    { min: -150, max: 150, step: 0.1, defaultUnit: '%' },
+    };
+
+    // Parse "14.6%" or "12px" into { num, unit }. Returns null for "auto" or non-numeric.
+    function parseCssValue(str) {
+        if (!str || /^\s*auto\s*$/i.test(str)) return null;
+        const m = String(str).trim().match(/^(-?\d+(?:\.\d+)?)\s*(%|px|vw|vh|em|rem)?\s*$/);
+        if (!m) return null;
+        return { num: parseFloat(m[1]), unit: m[2] || '%' };
+    }
+
+    function renderPositionList() {
+        const listEl = panel.querySelector('#positionList');
+        const rows = POSITION_CATEGORIES.map(cat => {
+            const s = positionState[cat.id];
+            const props = ['top', 'right', 'left', 'tx', 'ty'];
+            const propRows = props.map(prop => {
+                const cfg = POS_PROP_CONFIG[prop];
+                const parsed = parseCssValue(s[prop]);
+                const sliderVal = parsed ? parsed.num : 0;
+                const sliderDisabled = parsed === null ? 'data-noscrub="1"' : '';
+                return `
+                    <div class="pos-control">
+                        <span class="pos-label">${prop.toUpperCase()}</span>
+                        <input type="range" class="pos-slider"
+                               data-pos-cat="${cat.id}" data-pos-prop="${prop}"
+                               min="${cfg.min}" max="${cfg.max}" step="${cfg.step}"
+                               value="${sliderVal}" ${sliderDisabled}>
+                        <input type="text" class="pos-input"
+                               data-pos-cat="${cat.id}" data-pos-prop="${prop}"
+                               value="${s[prop]}" placeholder="${cfg.defaultUnit === '%' ? 'auto' : '0'}">
+                    </div>
+                `;
+            }).join('');
+            return `
+                <div class="debug-item pos-row" data-cat="${cat.id}">
+                    <div class="pos-row-header">
+                        <span class="debug-item-name">${cat.label}</span>
+                        <button class="debug-btn pos-reset-btn" data-pos-reset="${cat.id}">Reset</button>
+                    </div>
+                    <div class="pos-row-note">${cat.note}</div>
+                    <div class="pos-controls">${propRows}</div>
+                </div>
+            `;
+        }).join('');
+        listEl.innerHTML = rows;
+
+        // Wire SLIDER changes — drag to scrub the numeric value live
+        listEl.querySelectorAll('input.pos-slider').forEach(slider => {
+            slider.addEventListener('input', () => {
+                const cat  = slider.dataset.posCat;
+                const prop = slider.dataset.posProp;
+                const cfg  = POS_PROP_CONFIG[prop];
+                const num  = parseFloat(slider.value);
+                // Preserve the unit if the text already has one, otherwise default
+                const parsed = parseCssValue(positionState[cat][prop]);
+                const unit = parsed ? parsed.unit : cfg.defaultUnit;
+                const newVal = `${num}${unit}`;
+                positionState[cat][prop] = newVal;
+                // Sync the text input so user sees what the slider produced
+                const textInput = listEl.querySelector(
+                    `input.pos-input[data-pos-cat="${cat}"][data-pos-prop="${prop}"]`
+                );
+                if (textInput) textInput.value = newVal;
+                applyPositions();
+            });
+        });
+
+        // Wire TEXT INPUT changes — typing keeps the slider in sync
+        listEl.querySelectorAll('input.pos-input').forEach(textInput => {
+            textInput.addEventListener('input', () => {
+                const cat  = textInput.dataset.posCat;
+                const prop = textInput.dataset.posProp;
+                const val  = textInput.value.trim();
+                positionState[cat][prop] = val;
+                // Push value back to slider when it's numeric
+                const parsed = parseCssValue(val);
+                const slider = listEl.querySelector(
+                    `input.pos-slider[data-pos-cat="${cat}"][data-pos-prop="${prop}"]`
+                );
+                if (slider && parsed) {
+                    slider.value = parsed.num;
+                    slider.removeAttribute('data-noscrub');
+                } else if (slider && !parsed) {
+                    // Non-numeric (e.g., "auto" or "calc(...)") — disable scrub indicator
+                    slider.dataset.noscrub = '1';
+                }
+                applyPositions();
+            });
+        });
+
+        // Per-category Reset buttons
+        listEl.querySelectorAll('[data-pos-reset]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.posReset;
+                const cat = POSITION_CATEGORIES.find(c => c.id === id);
+                if (cat) {
+                    positionState[id] = { ...cat.defaults };
+                    applyPositions();
+                    renderPositionList();
+                }
+            });
+        });
+    }
+
+    // Global Reset All
+    panel.querySelector('[data-action="pos-reset-all"]').addEventListener('click', () => {
+        for (const cat of POSITION_CATEGORIES) {
+            positionState[cat.id] = { ...cat.defaults };
+        }
+        applyPositions();
+        renderPositionList();
+    });
+
+    // ============================================================
     // TAB SWITCHER
     // ============================================================
     panel.querySelectorAll('.debug-tab').forEach(tab => {
@@ -392,6 +610,10 @@
             renderInventoryList();
             subscribeInventory();
         });
+        // Positions: load persisted values, render UI, apply CSS immediately
+        initPositionState();
+        renderPositionList();
+        applyPositions();
     }
 
     if (document.readyState === 'loading') {

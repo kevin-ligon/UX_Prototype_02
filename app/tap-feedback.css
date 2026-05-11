@@ -1,0 +1,93 @@
+/* ============================================================
+   TAP / CLICK FEEDBACK
+   ============================================================
+   Universal interaction feedback for any clickable element that
+   doesn't already have its own :hover / :active styling.
+
+   USAGE
+     <button class="tap-feedback">Click me</button>
+     <div class="map-thing tap-feedback" onclick="...">...</div>
+
+   DESIGN PRINCIPLES (matches all in-prototype interactive buttons)
+   - Hover  : bouncy scale-up (1.03–1.08) + brightness boost
+   - Active : snappy scale-down (0.92–0.96) + brightness reduce
+   - Easing : cubic-bezier(0.34, 1.56, 0.64, 1)  ← gentle overshoot
+   - Hover transition ~140ms · Active transition ~70ms (responsive)
+   - Reduced motion: animations are stripped per user setting
+
+   These rules use moderate specificity so per-element CSS can
+   still override them when needed.
+   ============================================================ */
+
+.tap-feedback {
+    cursor: pointer;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter    140ms ease,
+                box-shadow 140ms ease;
+    will-change: transform, filter;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tap-feedback:hover {
+    transform: scale(1.04);
+    filter: brightness(1.12) saturate(1.05);
+}
+
+.tap-feedback:active {
+    transform: scale(0.94);
+    filter: brightness(0.86);
+    transition-duration: 70ms;
+}
+
+/* If the host element already uses translate() (e.g., centered with
+   translate(-50%, -50%)), inline styles can override .tap-feedback. */
+
+/* Disabled state — no interaction, dimmed */
+.tap-feedback[disabled],
+.tap-feedback.is-disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.5) brightness(0.6);
+    pointer-events: none;
+}
+
+/* ============================================================
+   ACCESSIBILITY: respect prefers-reduced-motion
+   Disables transforms/animations on ALL interactive buttons
+   (covers .tap-feedback, .hud-btn, .popup-btn, .heroes, etc.)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    .tap-feedback,
+    .tap-feedback:hover,
+    .tap-feedback:active,
+    .hud-btn,
+    .hud-btn:hover,
+    .hud-btn:active,
+    .popup-btn,
+    .popup-btn:hover,
+    .popup-btn:active,
+    .popup-close,
+    .popup-close:hover,
+    .popup-close:active,
+    .heroes,
+    .heroes:hover,
+    .heroes:active,
+    .zoom-btn,
+    .zoom-btn:hover,
+    .zoom-btn:active,
+    .map-prop,
+    .map-prop:hover,
+    .map-prop:active,
+    .tap-region,
+    .tap-region:hover,
+    .tap-region:active,
+    .debug-btn,
+    .debug-btn:hover,
+    .debug-btn:active,
+    .debug-toggle,
+    .debug-toggle:hover,
+    .debug-toggle:active {
+        transition: filter 80ms ease !important;
+        animation: none !important;
+        transform: none !important;
+    }
+}

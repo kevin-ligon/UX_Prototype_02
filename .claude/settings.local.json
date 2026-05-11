@@ -7,7 +7,17 @@
       "Read(//Users/uxmachine/.claude/**)",
       "Read(//Users/uxmachine/**)",
       "Bash(md5 /Users/uxmachine/Documents/UX_Prototype_02/images/icons/heroes_button.png)",
-      "Bash(md5 /Users/uxmachine/Documents/UX_Prototype_02/images/icons/heroes_button_test.png)"
+      "Bash(md5 /Users/uxmachine/Documents/UX_Prototype_02/images/icons/heroes_button_test.png)",
+      "mcp__figma__get_screenshot",
+      "Bash(mkdir -p backgrounds buildings panels icons)",
+      "Bash(curl -s -o backgrounds/ui_bg_fullscreen_default.png \"https://www.figma.com/api/mcp/asset/0195e802-ba29-44fc-ae6c-50d8e42dd976\")",
+      "Bash(curl -s -o panels/ui_bg_diamond.png \"https://www.figma.com/api/mcp/asset/06e0ce11-40c5-43c9-8864-28aed33b0065\")",
+      "Bash(curl -s -o panels/ui_bg_diamond_active.png \"https://www.figma.com/api/mcp/asset/2b5f1354-251d-4927-83bb-5b684299dca7\")",
+      "Bash(curl -s -o buildings/ui_building_barracks_ranged.png \"https://www.figma.com/api/mcp/asset/18c5b644-d847-453e-9559-98619708e7db\")",
+      "Bash(curl -s -o /Users/uxmachine/Documents/UX_Prototype_02/images/upgrade-menu-reference.png \"https://www.figma.com/api/mcp/asset/13e66343-0c10-498f-90e2-ffee788bcf02\")",
+      "Bash(curl -s -o buildings/ui_building_resourcegenerator_liquidmetal.png \"https://www.figma.com/api/mcp/asset/7418d362-d051-4bce-9fba-60333b8298a5\")",
+      "Bash(curl -s -o icons/ui_stat_storage_liquidmetal.png \"https://www.figma.com/api/mcp/asset/49cbf953-2498-4385-88d4-fb095ab5b022\")",
+      "Bash(wait)"
     ]
   }
 }

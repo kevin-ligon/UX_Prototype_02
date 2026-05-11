@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="badges.css">
     <link rel="stylesheet" href="9slice.css">
     <link rel="stylesheet" href="inventory.css">
+    <link rel="stylesheet" href="menus.css">
     <link rel="stylesheet" href="debug-panel.css">
+    <link rel="stylesheet" href="tap-feedback.css">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -256,10 +258,26 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
             z-index: 40;
-            transition: transform 0.2s;
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease,
+                        box-shadow 140ms ease;
+            will-change: transform, filter;
         }
 
-        .hud-btn:hover { transform: scale(1.08); }
+        .hud-btn:hover {
+            transform: scale(1.08);
+            filter: brightness(1.18) saturate(1.1);
+            box-shadow: 0 6px 18px rgba(221, 91, 229, 0.55),
+                        inset 0 2px 4px rgba(255, 255, 255, 0.25);
+        }
+
+        .hud-btn:active {
+            transform: scale(0.92);
+            filter: brightness(0.85);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7),
+                        inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+            transition-duration: 70ms;
+        }
 
         .hud-btn-large {
             width: clamp(70px, 7vw, 100px);
@@ -309,6 +327,20 @@
             gap: 4px;
             z-index: 40;
             cursor: pointer;
+            transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+            will-change: transform, filter;
+        }
+
+        .heroes:hover {
+            transform: scale(1.06);
+            filter: brightness(1.15);
+        }
+
+        .heroes:active {
+            transform: scale(0.93);
+            filter: brightness(0.85);
+            transition-duration: 70ms;
         }
 
         .heroes img {
@@ -335,16 +367,18 @@
             background: transparent;
             border: none;
             z-index: 15;
-            transition: filter 0.2s;
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+            transform-origin: center;
         }
 
         .tap-region:hover {
-            filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+            filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.5));
         }
 
         .tap-region:active {
-            transform: scale(0.98);
-            transform-origin: center;
+            transform: scale(0.96);
+            transition-duration: 70ms;
         }
 
         /* Empire bbox in zoom-out view: (591,321)-(1196,787) in 2436x1125 space */
@@ -382,9 +416,20 @@
             cursor: pointer;
         }
 
+        .map-prop {
+            transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+        }
+
         .map-prop:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-            filter: brightness(1.15);
+            transform: translate(-50%, -50%) scale(1.08);
+            filter: brightness(1.18);
+        }
+
+        .map-prop:active {
+            transform: translate(-50%, -50%) scale(0.95);
+            filter: brightness(0.88);
+            transition-duration: 70ms;
         }
 
         .map-prop img {
@@ -631,13 +676,25 @@
             font-family: 'Barlow Condensed', sans-serif;
         }
 
-        .zoom-btn:hover {
-            background: rgba(45, 25, 80, 0.95);
-            transform: scale(1.08);
-            box-shadow: 0 4px 14px rgba(221, 91, 229, 0.5);
+        .zoom-btn {
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 140ms ease,
+                        box-shadow 140ms ease,
+                        filter 140ms ease;
         }
 
-        .zoom-btn:active { transform: scale(1.02); }
+        .zoom-btn:hover {
+            background: rgba(45, 25, 80, 0.95);
+            transform: scale(1.1);
+            filter: brightness(1.15);
+            box-shadow: 0 4px 14px rgba(221, 91, 229, 0.55);
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.9);
+            filter: brightness(0.85);
+            transition-duration: 70ms;
+        }
 
         .zoom-btn.active {
             background: linear-gradient(135deg, #dd5be5, #9d2ba5);
@@ -734,12 +791,21 @@
             border: none;
             cursor: pointer;
             padding: 0;
-            transition: transform 0.2s;
+            transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
             z-index: 10;
+            will-change: transform, filter;
         }
 
         .popup-close:hover {
-            transform: scale(1.1) rotate(90deg);
+            transform: scale(1.12) rotate(90deg);
+            filter: brightness(1.18);
+        }
+
+        .popup-close:active {
+            transform: scale(0.92) rotate(90deg);
+            filter: brightness(0.85);
+            transition-duration: 70ms;
         }
 
         .popup-close img {
@@ -858,31 +924,44 @@
             margin-top: 2.5%;
         }
 
-        /* Popup action buttons — uses 9-slice cyan background.
-           Cost capsule lives in a sibling above (see .popup-action). */
+        /* Popup action buttons — 9-slice cyan background.
+           Sized & styled per Figma button library (Buttons.png reference). */
         .popup-btn {
             position: relative;
-            min-width: 200px;
-            min-height: 50px;
+            min-width: clamp(220px, 28vw, 360px);
+            min-height: clamp(56px, 6vw, 80px);
             cursor: pointer;
-            transition: transform 0.15s, filter 0.15s;
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             background: transparent;
+            will-change: transform, filter;
         }
 
-        .popup-btn:hover  { transform: translateY(-2px); filter: brightness(1.1); }
-        .popup-btn:active { transform: translateY(0);    filter: brightness(0.95); }
+        .popup-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            filter: brightness(1.15) saturate(1.1)
+                    drop-shadow(0 4px 14px rgba(0, 200, 255, 0.45));
+        }
+        .popup-btn:active {
+            transform: translateY(2px) scale(0.96);
+            filter: brightness(0.85);
+            transition-duration: 70ms;
+        }
 
         .popup-btn-label {
-            font-size: clamp(13px, 1.3vw, 18px);
+            /* Big, bold italic uppercase — matches "ACTION TEXT" sizing in the Figma library */
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: clamp(20px, 2.2vw, 32px);
             font-weight: 900;
             font-style: italic;
             color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75),
+                         0 0 6px rgba(0, 0, 0, 0.4);
             line-height: 1;
             white-space: nowrap;
         }
@@ -1029,7 +1108,8 @@
                 <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
                 <span class="heroes-label">Army</span>
             </div>
-            <div class="hud-btn btn-buildings" data-badge-target="buildings" data-badge-label="Buildings">
+            <div class="hud-btn btn-buildings" data-badge-target="buildings" data-badge-label="Buildings"
+                 onclick="Menu.open('buildings')">
                 <span class="hud-btn-label">Buildings</span>
                 <span class="badge badge-arrow" title="Buildings can be upgraded">↑</span>
             </div>
@@ -1138,7 +1218,7 @@
                 <!-- Action buttons (cost capsule above, action text inside) -->
                 <div class="popup-actions">
                     <div class="popup-action">
-                        <div class="cost-capsule nslice-bg-pill">
+                        <div class="cost-capsule nslice-bg-list">
                             <span class="cost-item" data-cost-resource="gold" data-cost-amount="250">
                                 <img src="../assets/icons/resource_gold.png" alt="" class="cost-icon">
                                 <span class="cost-amount">250</span>
@@ -1152,7 +1232,7 @@
                     </div>
 
                     <div class="popup-action">
-                        <div class="cost-capsule nslice-bg-pill">
+                        <div class="cost-capsule nslice-bg-list">
                             <span class="cost-item" data-cost-resource="fuel" data-cost-amount="100">
                                 <img src="../assets/icons/resource_energy.png" alt="" class="cost-icon">
                                 <span class="cost-amount">100</span>
@@ -1222,8 +1302,607 @@
         setZoom('out');
     </script>
 
+    <!-- ================================================================
+         FULL-SCREEN MENU: BUILDINGS
+         Opened by clicking the Buildings HUD button.
+         ================================================================ -->
+    <div class="fullscreen-menu" id="menu-buildings">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back to map">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">BARRACKS</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+
+        <div class="menu-body">
+            <!-- Tab list (left side) -->
+            <nav class="menu-tabs" aria-label="Building categories">
+                <button class="tab-btn" data-tab-id="capital-city" data-tab-title="CAPITAL CITY">
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_tab_hero.png" alt="">
+                    </span>
+                    <span class="tab-label">Capital City</span>
+                    <span class="badge badge-dot"></span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="resource-generators" data-tab-title="RESOURCE GENERATORS">
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_tab_abilities.png" alt="">
+                    </span>
+                    <span class="tab-label">Resource Generators</span>
+                    <span class="badge badge-dot"></span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="barracks" data-tab-title="BARRACKS" data-active>
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_tab_rank.png" alt="">
+                    </span>
+                    <span class="tab-label">Barracks</span>
+                    <span class="badge badge-arrow">↑</span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="building-type" data-tab-title="BUILDING TYPE">
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_tab_rank.png" alt="">
+                    </span>
+                    <span class="tab-label">Building Type</span>
+                </button>
+            </nav>
+
+            <!-- Content area (right side) -->
+            <main class="menu-content">
+                <section class="menu-panel" data-tab-panel="capital-city" hidden>
+                    <div class="card-grid">
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_hero_tactician.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Capital City">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">12</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_06.png" alt="">
+                            </div>
+                            <span class="badge badge-arrow">↑</span>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="menu-panel" data-tab-panel="resource-generators" hidden>
+                    <div class="card-grid">
+                        <!-- Liquid Metal Generator (upgraded) -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_rps_symbioticliquid.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_liquidmetal.png" alt="Liquid Metal Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">2</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-arrow">↑</span>
+                        </article>
+
+                        <!-- Liquid Metal Generator (Living Metal) -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_rps_livingmetal.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_liquidmetal.png" alt="Living Metal Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">1</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                        </article>
+
+                        <!-- Liquid Metal Generator (Energy Crystals) -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_rps_energycrystals.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_liquidmetal.png" alt="Energy Crystal Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">1</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                        </article>
+
+                        <!-- Coal Generator -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/resource_coal.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_coal.png" alt="Coal Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">1</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-new">NEW</span>
+                        </article>
+
+                        <!-- Energy Crystals Generator (coal style) -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/resource_meteorite.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_coal.png" alt="Crystal Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">1</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-new">NEW</span>
+                        </article>
+
+                        <!-- Steel Generator -->
+                        <article class="building-card" onclick="Menu.open('upgrade-generator')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/resource_steel.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_resourcegenerator_coal.png" alt="Steel Generator">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">1</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-new">NEW</span>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="menu-panel" data-tab-panel="barracks">
+                    <div class="card-grid">
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_troop_ranged.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Ranged Barracks">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">3</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-arrow">↑</span>
+                        </article>
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_troop_siege.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Siege Barracks">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">3</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                            <span class="badge badge-dot"></span>
+                        </article>
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_troop_flying.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Flying Barracks">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">3</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                        </article>
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_troop_charger.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Charger Barracks">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">3</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_04.png" alt="">
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="menu-panel" data-tab-panel="building-type" hidden>
+                    <div class="card-grid">
+                        <article class="building-card" onclick="Menu.open('upgrade')">
+                            <span class="card-archetype">
+                                <img src="../assets/icons/ui_icon_archetype_troop_melee.png" alt="">
+                            </span>
+                            <div class="building-card-image">
+                                <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Melee Barracks">
+                            </div>
+                            <div class="card-level-strip">
+                                <span class="level-label">Lv</span>
+                                <span class="level-num">2</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_02.png" alt="">
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         FULL-SCREEN MENU: BUILDING UPGRADE
+         Opened by tapping a building card. Stacks on top of the
+         Building Collection menu so Back returns to the collection.
+         ================================================================ -->
+    <div class="fullscreen-menu" id="menu-upgrade">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">UPGRADE MELEE BARRACKS</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+
+        <div class="menu-body">
+            <!-- Tab list (left) — has reserved slot at top for Collection button -->
+            <nav class="menu-tabs has-collection-slot" aria-label="Building actions">
+                <!-- Collection shortcut: hidden by default; shown when this menu
+                     was reached from a territory map prop instead of the
+                     Building Collection menu. -->
+                <button class="menu-collection-btn" hidden onclick="Menu.open('buildings')">
+                    <span class="grid-glyph">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </span>
+                    <span>Building<br>Collection</span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="upgrade" data-tab-title="UPGRADE MELEE BARRACKS" data-active>
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_upgrade.png" alt="">
+                    </span>
+                    <span class="tab-label">Upgrade</span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="recruit" data-tab-title="RECRUIT MELEE TROOPS">
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_recruit.png" alt="">
+                    </span>
+                    <span class="tab-label">Recruit</span>
+                </button>
+            </nav>
+
+            <!-- Content -->
+            <main class="menu-content">
+                <section class="menu-panel upgrade-panel" data-tab-panel="upgrade">
+
+                    <!-- Top: building image (center) + stats panel (right) -->
+                    <div class="upgrade-layout">
+                        <div class="upgrade-center">
+                            <button class="building-nav-arrow building-nav-prev" aria-label="Previous building">
+                                <img src="../assets/buttons/ui_btn_next_previous.png" alt="">
+                            </button>
+
+                            <div class="upgrade-building">
+                                <div class="upgrade-building-image">
+                                    <img src="../assets/buildings/ui_building_barracks_ranged.png" alt="Melee Barracks">
+                                </div>
+                                <div class="upgrade-level-display">
+                                    <div class="upgrade-level-bg"></div>
+                                    <div class="level-text">
+                                        <span class="level-prefix">Lv</span>
+                                        <span class="level-current">3</span>
+                                        <span class="level-divider">/</span>
+                                        <span class="level-max">10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="building-nav-arrow building-nav-next" aria-label="Next building">
+                                <img src="../assets/buttons/ui_btn_next_previous.png" alt="">
+                            </button>
+                        </div>
+
+                        <div class="upgrade-right">
+                            <div class="upgrade-unit-type">
+                                <div class="archetype-badge">
+                                    <img src="../assets/icons/ui_icon_archetype_troop_melee.png" alt="">
+                                </div>
+                                <div class="unit-info">
+                                    <span class="unit-label">Unit Type</span>
+                                    <span class="unit-name">Melee</span>
+                                </div>
+                            </div>
+
+                            <hr class="upgrade-divider">
+
+                            <p class="upgrade-description">
+                                Barracks utility description goes in this area here.
+                            </p>
+
+                            <div class="upgrade-stats">
+                                <h3>Upgrades to Increase Unit Stats</h3>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_attack_flat.png" alt="">
+                                    <span class="stat-name">Attack</span>
+                                    <span class="stat-value">100</span>
+                                    <span class="stat-bonus">+30</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_health_flat.png" alt="">
+                                    <span class="stat-name">Health</span>
+                                    <span class="stat-value">80</span>
+                                    <span class="stat-bonus">+10</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_defense_flat.png" alt="">
+                                    <span class="stat-name">Defense</span>
+                                    <span class="stat-value">60</span>
+                                    <span class="stat-bonus">+10</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_attack_percent.png" alt="">
+                                    <span class="stat-name">Attack %</span>
+                                    <span class="stat-value">90%</span>
+                                    <span class="stat-bonus">+5%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_health_percent.png" alt="">
+                                    <span class="stat-name">Health %</span>
+                                    <span class="stat-value">60%</span>
+                                    <span class="stat-bonus">+5%</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_stat_defense_percent.png" alt="">
+                                    <span class="stat-name">Defense %</span>
+                                    <span class="stat-value">60%</span>
+                                    <span class="stat-bonus">+5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: 10-node level progress + cost + UPGRADE button -->
+                    <div class="upgrade-bottom">
+                        <div class="upgrade-progress">
+                            <span class="progress-level-label">Level: <span class="level-current">3</span></span>
+                            <div class="level-track">
+                                <div class="level-track-fill" style="width: 22%"></div>
+                                <div class="level-nodes">
+                                    <span class="level-node complete"></span>
+                                    <span class="level-node complete"></span>
+                                    <span class="level-node current"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                </div>
+                            </div>
+                            <div class="next-rank-block">
+                                <span class="next-rank-label">Next Rank</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_05.png" alt="">
+                            </div>
+                        </div>
+
+                        <div class="popup-action upgrade-action">
+                            <div class="cost-capsule nslice-bg-list">
+                                <span class="cost-item" data-cost-resource="gold" data-cost-amount="1500">
+                                    <img src="../assets/icons/resource_gold.png" alt="" class="cost-icon">
+                                    <span class="cost-amount">1500</span>
+                                </span>
+                            </div>
+                            <button class="popup-btn btn-green-primary" data-cost='{"gold": 1500}'>
+                                <span class="popup-btn-label">Upgrade</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="menu-panel" data-tab-panel="recruit" hidden>
+                    <p style="color:#9e8cb2; padding: 24px; text-align:center;">
+                        Recruit panel coming soon
+                    </p>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         FULL-SCREEN MENU: RESOURCE GENERATOR UPGRADE
+         Variant of the Upgrade menu — used when a Resource Generator
+         building card is tapped. Has 2 production-rate highlights at
+         the top instead of the per-unit stat list.
+         ================================================================ -->
+    <div class="fullscreen-menu" id="menu-upgrade-generator">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">UPGRADE LIQUID METAL GENERATOR</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+
+        <div class="menu-body">
+            <nav class="menu-tabs has-collection-slot" aria-label="Generator actions">
+                <button class="menu-collection-btn" hidden onclick="Menu.open('buildings')">
+                    <span class="grid-glyph">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </span>
+                    <span>Building<br>Collection</span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="upgrade" data-tab-title="UPGRADE LIQUID METAL GENERATOR" data-active>
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_upgrade.png" alt="">
+                    </span>
+                    <span class="tab-label">Upgrade</span>
+                </button>
+
+                <button class="tab-btn" data-tab-id="refinement" data-tab-title="REFINEMENT">
+                    <span class="tab-diamond">
+                        <img class="tab-icon" src="../assets/icons/ui_icon_tab_rank.png" alt="">
+                    </span>
+                    <span class="tab-label">Refinement</span>
+                </button>
+            </nav>
+
+            <main class="menu-content">
+                <section class="menu-panel upgrade-panel" data-tab-panel="upgrade">
+
+                    <div class="upgrade-layout">
+                        <div class="upgrade-center">
+                            <button class="building-nav-arrow building-nav-prev" aria-label="Previous building">
+                                <img src="../assets/buttons/ui_btn_next_previous.png" alt="">
+                            </button>
+
+                            <div class="upgrade-building">
+                                <div class="upgrade-building-image">
+                                    <img src="../assets/buildings/ui_building_resourcegenerator_liquidmetal.png" alt="Liquid Metal Generator">
+                                </div>
+                                <div class="upgrade-level-display">
+                                    <div class="upgrade-level-bg"></div>
+                                    <div class="level-text">
+                                        <span class="level-prefix">Lv</span>
+                                        <span class="level-current">3</span>
+                                        <span class="level-divider">/</span>
+                                        <span class="level-max">10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="building-nav-arrow building-nav-next" aria-label="Next building">
+                                <img src="../assets/buttons/ui_btn_next_previous.png" alt="">
+                            </button>
+                        </div>
+
+                        <div class="upgrade-right gen-right">
+                            <!-- Production highlights (top) -->
+                            <div class="gen-highlights">
+                                <div class="gen-highlight">
+                                    <div class="highlight-badge">
+                                        <img src="../assets/icons/ui_icon_rps_symbioticliquid.png" alt="">
+                                    </div>
+                                    <div class="highlight-info">
+                                        <span class="highlight-label">Production Rate</span>
+                                        <span class="highlight-value">100<span class="unit">/min</span></span>
+                                    </div>
+                                </div>
+                                <div class="gen-highlight">
+                                    <div class="highlight-badge">
+                                        <img src="../assets/icons/ui_stat_storage_liquidmetal.png" alt="">
+                                    </div>
+                                    <div class="highlight-info">
+                                        <span class="highlight-label">Capacity</span>
+                                        <span class="highlight-value">20.7K</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="upgrade-divider">
+
+                            <p class="upgrade-description">
+                                Resource generator utility description goes in this area here.
+                            </p>
+
+                            <div class="upgrade-stats">
+                                <h3>Level Up and Increase</h3>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_icon_rps_symbioticliquid.png" alt="">
+                                    <span class="stat-name">Production</span>
+                                    <span class="stat-value">900/m</span>
+                                    <span class="stat-bonus">+300/m</span>
+                                </div>
+                                <div class="stat-row">
+                                    <img class="stat-icon" src="../assets/icons/ui_stat_storage_liquidmetal.png" alt="">
+                                    <span class="stat-name">Capacity</span>
+                                    <span class="stat-value">5.8k</span>
+                                    <span class="stat-bonus">+1.1k</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="upgrade-bottom">
+                        <div class="upgrade-progress">
+                            <span class="progress-level-label">Level: <span class="level-current">3</span></span>
+                            <div class="level-track">
+                                <div class="level-track-fill" style="width: 22%"></div>
+                                <div class="level-nodes">
+                                    <span class="level-node complete"></span>
+                                    <span class="level-node complete"></span>
+                                    <span class="level-node current"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                    <span class="level-node"></span>
+                                </div>
+                            </div>
+                            <div class="next-rank-block">
+                                <span class="next-rank-label">Next Rank</span>
+                                <img class="rank-icon" src="../assets/icons/ui_icon_rank_05.png" alt="">
+                            </div>
+                        </div>
+
+                        <div class="popup-action upgrade-action">
+                            <div class="cost-capsule nslice-bg-list">
+                                <span class="cost-item" data-cost-resource="steel" data-cost-amount="1500">
+                                    <img src="../assets/icons/resource_steel.png" alt="" class="cost-icon">
+                                    <span class="cost-amount">1500</span>
+                                </span>
+                            </div>
+                            <button class="popup-btn btn-green-primary" data-cost='{"steel": 1500}'>
+                                <span class="popup-btn-label">Upgrade</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="menu-panel" data-tab-panel="refinement" hidden>
+                    <p style="color:#9e8cb2; padding: 24px; text-align:center;">
+                        Refinement panel coming soon
+                    </p>
+                </section>
+            </main>
+        </div>
+    </div>
+
     <!-- Player inventory system -->
     <script src="inventory.js"></script>
+    <!-- Full-screen menu / tab system (Buildings, etc.) -->
+    <script src="menus.js"></script>
     <!-- Notification debug panel (toggle with the bug button bottom-left or press D) -->
     <script src="debug-panel.js"></script>
 </body>

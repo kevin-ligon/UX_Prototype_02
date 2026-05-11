@@ -135,8 +135,11 @@ Pick the closest 9-slice utility class and apply it to the element directly:
 - `nslice-bg-stat` / `nslice-bg-list` / `nslice-bg-header` — table-like rows
 - `nslice-btn-cyan` — secondary action button (most uses)
 - `nslice-btn-cyan-icon` — small circular icon button
-- `nslice-btn-primary` — green primary (key actions only)
 - `nslice-btn-secondary-large` — large secondary
+
+**Note:** the **green primary button** (`ui_btn_primary.png`) is **NOT** 9-sliced —
+use `.btn-green-primary` (in `menus.css`) which renders the asset at its native
+1:1 dimensions (485 × 134 px). Reserved for key actions: Battle, Level Up, Upgrade.
 
 If a needed background isn't in `9slice.css`, add a new utility class there with the
 correct slice values rather than inlining `border-image` per element.
