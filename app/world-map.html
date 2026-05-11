@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="badges.css">
+    <link rel="stylesheet" href="debug-panel.css">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -934,19 +936,19 @@
 
             <!-- Empire: banners above + Capital City + label + 4 battle indicators -->
 
-            <!-- Banners above Capital City (boss / dungeon / fuel) each with notification pip -->
+            <!-- Banners above Capital City (boss / dungeon / fuel) each with appropriate badge -->
             <div class="banner-row" data-zoom="in">
-                <div class="banner-item">
+                <div class="banner-item" data-badge-target="banner-boss" data-badge-label="Boss banner">
                     <img src="../assets/icons/ui_map_banner_battle_boss.png" alt="Boss" class="banner-img">
-                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                    <span class="badge badge-alert" title="Boss expires soon">!</span>
                 </div>
-                <div class="banner-item">
+                <div class="banner-item" data-badge-target="banner-dungeon" data-badge-label="Dungeon banner">
                     <img src="../assets/icons/ui_map_banner_battle_dungeon.png" alt="Dungeon" class="banner-img">
-                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                    <span class="badge badge-alert" title="Dungeon expires soon">!</span>
                 </div>
-                <div class="banner-item">
+                <div class="banner-item" data-badge-target="banner-fuel" data-badge-label="Fuel banner">
                     <img src="../assets/icons/ui_map_banner_fuel.png" alt="Fuel" class="banner-img">
-                    <img src="../assets/ui-elements/Notification Pip Large.png" alt="" class="banner-pip">
+                    <span class="badge badge-arrow" title="Fuel ready to collect">↑</span>
                 </div>
             </div>
 
@@ -1023,13 +1025,13 @@
             </div>
 
             <!-- LEFT HUD BUTTONS -->
-            <div class="hud-btn btn-empire-summary">
+            <div class="hud-btn btn-empire-summary" data-badge-target="empire-summary" data-badge-label="Empire Summary">
                 <span class="hud-btn-label">Empire<br>Summary</span>
-                <div class="pip"></div>
+                <span class="badge badge-arrow" title="Empire upgrades available">↑</span>
             </div>
-            <div class="hud-btn btn-conquest-guide">
+            <div class="hud-btn btn-conquest-guide" data-badge-target="conquest-guide" data-badge-label="Conquest Guide">
                 <span class="hud-btn-label">Conquest<br>Guide</span>
-                <div class="pip"></div>
+                <span class="badge badge-dot" title="New conquest activity"></span>
             </div>
 
             <!-- BOTTOM LEFT: HEROES + BUILDINGS -->
@@ -1037,25 +1039,25 @@
                 <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
                 <span class="heroes-label">Army</span>
             </div>
-            <div class="hud-btn btn-buildings">
+            <div class="hud-btn btn-buildings" data-badge-target="buildings" data-badge-label="Buildings">
                 <span class="hud-btn-label">Buildings</span>
-                <div class="pip"></div>
+                <span class="badge badge-arrow" title="Buildings can be upgraded">↑</span>
             </div>
 
             <!-- RIGHT HUD BUTTONS -->
-            <div class="hud-btn btn-offers">
+            <div class="hud-btn btn-offers" data-badge-target="offers" data-badge-label="Offers">
                 <span class="hud-btn-label">Offers</span>
-                <div class="pip"></div>
+                <span class="badge badge-new" title="New offers available">NEW</span>
             </div>
-            <div class="hud-btn btn-store">
+            <div class="hud-btn btn-store" data-badge-target="store" data-badge-label="Store">
                 <span class="hud-btn-label">Store</span>
-                <div class="pip"></div>
+                <span class="badge badge-dot" title="Store update"></span>
             </div>
 
             <!-- BOTTOM RIGHT: SUMMON HERO -->
-            <div class="hud-btn hud-btn-large btn-summon">
+            <div class="hud-btn hud-btn-large btn-summon" data-badge-target="summon" data-badge-label="Summon Hero">
                 <span class="hud-btn-label">Summon<br>Hero</span>
-                <div class="pip"></div>
+                <span class="badge badge-dot" title="Summon available"></span>
             </div>
 
             <!-- ZOOM CONTROLS -->
@@ -1147,15 +1149,15 @@
 
                 <!-- Action buttons -->
                 <div class="popup-actions">
-                    <button class="popup-btn">
+                    <button class="popup-btn" data-badge-target="change-governor" data-badge-label="Change Governor">
                         <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
                         <span class="popup-btn-label">Change Governor</span>
-                        <span class="pip"></span>
+                        <span class="badge badge-dot" title="Governor change available"></span>
                     </button>
-                    <button class="popup-btn">
+                    <button class="popup-btn" data-badge-target="enter-empire" data-badge-label="Enter Empire">
                         <img src="../assets/buttons/Secondary Button Small.png" alt="" class="popup-btn-bg">
                         <span class="popup-btn-label">Enter Empire</span>
-                        <span class="pip"></span>
+                        <span class="badge badge-arrow" title="Empire actions available">↑</span>
                     </button>
                 </div>
             </div>
@@ -1214,5 +1216,8 @@
         // Initialize button state
         setZoom('out');
     </script>
+
+    <!-- Notification debug panel (toggle with the bug button bottom-left or press D) -->
+    <script src="debug-panel.js"></script>
 </body>
 </html>

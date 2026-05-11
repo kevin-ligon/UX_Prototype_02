@@ -105,6 +105,34 @@ After a role is selected: if it has an agent file in `.claude/agents/`, read tha
 - **Interactions:** Subtle hover states, smooth transitions
 - **Accessibility:** Alt text, ARIA labels, keyboard navigation
 
+### Notification Badges (MANDATORY)
+
+**Source of truth:** `NOTIFICATION_SYSTEM_GUIDE.md` (project root)
+**Implementation:** `app/badges.css` (5 reusable badge classes)
+
+When adding any notification indicator (icon dot, count, "NEW" tag, urgency mark, etc.) you MUST:
+
+1. **Use the existing badge classes** in `app/badges.css` — never invent a new pip style.
+2. **Pick the right type per the priority table** (highest applicable wins, never stack):
+   - `badge-alert` (! yellow) — content expires in <24hr
+   - `badge-arrow` (↑ green) — player can upgrade/improve NOW with current resources
+   - `badge-number` (# purple) — 2+ countable items waiting (mail, claims, etc.)
+   - `badge-new` (NEW blue) — content unlocked <48hr ago
+   - `badge-dot` (● red) — general low-priority signal (catch-all)
+3. **Keep on-screen total ≤ 7** — group similar items behind one parent badge with a count.
+4. **Auto-clear immediately on action.** Don't leave stale badges.
+5. **Never badge an action the player can't actually take.**
+
+Markup example:
+```html
+<button class="hud-btn">
+  <span>Mail</span>
+  <span class="badge badge-number">12</span>
+</button>
+```
+
+If a request adds a notification dot/pip without specifying which type, ask: "Is this expiring soon, an actionable upgrade, a count, new, or a general signal?" before picking.
+
 ## Git Workflow
 
 - **Only commit when user requests** - "Save this" or "Deploy"

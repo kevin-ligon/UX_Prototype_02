@@ -1,0 +1,155 @@
+/* ============================================================
+   NOTIFICATION BADGE SYSTEM
+   Implementation of NOTIFICATION_SYSTEM_GUIDE.md
+
+   5 badge types, all positioned relative to a parent container
+   that has `position: relative` (or absolute).
+
+   Usage:
+     <div class="badge-host">
+       ...
+       <span class="badge badge-dot"></span>
+       <span class="badge badge-arrow">↑</span>
+       <span class="badge badge-number">12</span>
+       <span class="badge badge-new">NEW</span>
+       <span class="badge badge-alert">!</span>
+     </div>
+
+   Priority order (highest first), per the guide:
+     1. badge-alert  (! Yellow)   — <24hr to expire
+     2. badge-arrow  (↑ Green)    — can upgrade NOW
+     3. badge-number (# Purple)   — count of waiting items
+     4. badge-new    (NEW Blue)   — first 24-48hr of new content
+     5. badge-dot    (● Red)      — general low-priority signal
+
+   Only show ONE badge per element — pick the highest applicable.
+   ============================================================ */
+
+/* Common base for every badge */
+.badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ------------------------------------------------------------
+   1. RED DOT — general low-priority notification
+      "Something happened, look here when you can."
+   ------------------------------------------------------------ */
+.badge-dot {
+    width: 12px;
+    height: 12px;
+    background: #EF4444;
+    border-radius: 50%;
+    border-width: 2px;
+    animation: badgePulseGentle 2s ease-in-out infinite;
+}
+
+@keyframes badgePulseGentle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.15); opacity: 0.85; }
+}
+
+/* ------------------------------------------------------------
+   2. GREEN ARROW — actionable upgrade available NOW
+      "You can improve something with current resources."
+   ------------------------------------------------------------ */
+.badge-arrow {
+    width: 24px;
+    height: 24px;
+    background: #10B981;
+    border-radius: 50%;
+    font-size: 14px;
+    animation: badgeBounce 1s ease-in-out infinite;
+}
+
+@keyframes badgeBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+}
+
+/* ------------------------------------------------------------
+   3. NUMBER COUNT — multiple waiting items (purple)
+      "There are N things to claim/read here."
+   ------------------------------------------------------------ */
+.badge-number {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    background: #8B5CF6;
+    border-radius: 12px;
+    font-size: 13px;
+    /* No animation — counts should be calm */
+}
+
+/* ------------------------------------------------------------
+   4. NEW — fresh content (blue) auto-clears in 24-48h
+      "This is brand-new, take a look."
+   ------------------------------------------------------------ */
+.badge-new {
+    height: 20px;
+    padding: 0 8px;
+    background: #3B82F6;
+    border-radius: 10px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    animation: badgeShine 2s ease-in-out infinite;
+}
+
+@keyframes badgeShine {
+    0%, 100% { box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 0 0 rgba(59,130,246,0); }
+    50%      { box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px 2px rgba(59,130,246,0.6); }
+}
+
+/* ------------------------------------------------------------
+   5. EXCLAMATION — expiring soon (yellow/amber)
+      "<24hr to act. Highest urgency."
+   ------------------------------------------------------------ */
+.badge-alert {
+    width: 24px;
+    height: 24px;
+    background: #F59E0B;
+    border-radius: 50%;
+    font-size: 16px;
+    animation: badgeUrgent 1.5s ease-in-out infinite;
+}
+
+@keyframes badgeUrgent {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25%      { transform: scale(1.1) rotate(-3deg); }
+    75%      { transform: scale(1.1) rotate(3deg); }
+}
+
+/* ------------------------------------------------------------
+   Reduced motion — disable animations per accessibility spec
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .badge-dot,
+    .badge-arrow,
+    .badge-new,
+    .badge-alert {
+        animation: none !important;
+    }
+}
+
+/* ------------------------------------------------------------
+   Convenience: badge-host marker class for clarity
+   (any positioned element can hold a badge — this is optional)
+   ------------------------------------------------------------ */
+.badge-host {
+    position: relative;
+}
