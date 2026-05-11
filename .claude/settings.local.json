@@ -17,7 +17,8 @@
       "Bash(curl -s -o /Users/uxmachine/Documents/UX_Prototype_02/images/upgrade-menu-reference.png \"https://www.figma.com/api/mcp/asset/13e66343-0c10-498f-90e2-ffee788bcf02\")",
       "Bash(curl -s -o buildings/ui_building_resourcegenerator_liquidmetal.png \"https://www.figma.com/api/mcp/asset/7418d362-d051-4bce-9fba-60333b8298a5\")",
       "Bash(curl -s -o icons/ui_stat_storage_liquidmetal.png \"https://www.figma.com/api/mcp/asset/49cbf953-2498-4385-88d4-fb095ab5b022\")",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(gh api *)"
     ]
   }
 }
