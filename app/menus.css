@@ -526,6 +526,96 @@
 }
 
 /* ============================================================
+   STAT PILL — compact stat row
+   ============================================================
+   Reference: Figma `Resources Stat Row Small (.5x)`
+   Layout: [icon] [............] [value] [bonus] [arrow]
+   - 9-slice `ui_bg_stat` background
+   - Icon overhangs slightly to the left
+   - Value and bonus are right-aligned via flex spacer
+   - Arrow + bonus are optional (omit for "Default" variant)
+
+   Markup:
+     <div class="stat-pill">
+       <img class="pill-icon" src="...">
+       <span class="pill-spacer"></span>
+       <span class="pill-value">100/m</span>
+       <span class="pill-bonus">+1.1k</span>          [optional]
+       <img class="pill-arrow" src="...stat_increase"> [optional]
+     </div>
+   ============================================================ */
+
+.stat-pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 8px 0 0;
+    line-height: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    color: #ffffff;
+    /* 9-slice ui_bg_stat for the dark pill backing */
+    border-style: solid;
+    border-width: 8px;
+    border-image-source: url('../assets/panels/ui_bg_stat.png');
+    border-image-slice: 10 fill;
+    border-image-repeat: stretch;
+}
+
+.stat-pill .pill-icon {
+    width: clamp(28px, 2.8vw, 42px);
+    height: clamp(28px, 2.8vw, 42px);
+    object-fit: contain;
+    flex-shrink: 0;
+    margin-left: -10px;     /* slight overhang past the pill's left edge */
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.stat-pill .pill-spacer { flex: 1; }
+
+.stat-pill .pill-value {
+    font-size: clamp(15px, 1.5vw, 22px);
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.stat-pill .pill-bonus {
+    font-size: clamp(14px, 1.4vw, 20px);
+    font-weight: 900;
+    font-style: italic;
+    color: #37ff5e;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(55, 255, 94, 0.5),
+                 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.stat-pill .pill-arrow {
+    width: clamp(14px, 1.4vw, 20px);
+    height: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 4px rgba(55, 255, 94, 0.5));
+}
+
+/* Notification variant — small red pip in top-right corner */
+.stat-pill[data-variant="notification"]::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: 4px;
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle, #ff3366, #aa1144);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 51, 102, 0.7);
+    animation: pulse 2s infinite;
+}
+
+/* ============================================================
    REWARD / ITEM CARD COMPONENT (small)
    ============================================================
    Compact item card used in popups (potential rewards, drops, etc.)

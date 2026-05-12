@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="menus.css">
     <link rel="stylesheet" href="debug-panel.css">
     <link rel="stylesheet" href="tap-feedback.css">
+    <link rel="stylesheet" href="army.css">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -72,7 +73,15 @@
 
         /* Zoom-out view (default) — visible at start */
         .bg-zoom-out { opacity: 1; transform: scale(1); }
-        .bg-zoom-in  { opacity: 0; transform: scale(0.7); }
+        .bg-zoom-in  {
+            opacity: 0;
+            transform: scale(0.7);
+            /* The zoomed-in art renders slightly darker than the zoomed-out
+               version — boost brightness/saturation so the colored-stroke
+               islands (Empire green, Expedition cyan, Ravagers purple, etc.)
+               match the vibrancy of their world-map counterparts. */
+            filter: brightness(1.15) saturate(1.2);
+        }
 
         /* When zoomed in, swap the layers */
         .map-canvas[data-zoom="in"] .bg-zoom-out { opacity: 0; transform: scale(1.5); }
@@ -727,6 +736,151 @@
             opacity: 1;
         }
 
+        /* Anchored variant — popup pinned next to the tapped element.
+           No backdrop, no full-screen click capture; map stays interactive.
+           Position is set via inline left/top by openPopup(). */
+        .popup-overlay.anchored {
+            background: transparent;
+            backdrop-filter: none;
+            pointer-events: none;
+        }
+
+        .popup-overlay.anchored .popup {
+            pointer-events: auto;
+            position: absolute;
+            margin: 0;
+            width: clamp(500px, 46vw, 700px);
+            transform-origin: left center;
+        }
+
+        /* ----- Capital City popup: tighter aspect + compact content
+                so all 4 stats + status indicators + 2 buttons fit cleanly ----- */
+        #popup-empire .popup {
+            aspect-ratio: 1.4 / 1;           /* shorter — pulls actions up tight under the body */
+        }
+
+        /* Much tighter inset so content uses more of the popup interior
+           (saves ~100+ px of negative space around the primary content). */
+        #popup-empire .popup-inner {
+            inset: 0% 1.5% 0% 1.5%;      /* tighter padding — content fills more of the popup background */
+            gap: 4px;
+        }
+
+        #popup-empire .popup-title-bar { margin-top: -30px; margin-bottom: 4px; }
+        #popup-empire .popup-title {
+            font-size: clamp(18px, 2vw, 28px);
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+        #popup-empire .popup-subtitle { font-size: clamp(10px, 1vw, 13px); margin-top: 32px; }
+
+        /* Close button extends past the popup's top + right edges
+           (about 75% of the button overhangs outside the frame),
+           plus an extra 30px push up and 30px push right. */
+        #popup-empire .popup-close {
+            top: calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
+            right: calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
+        }
+
+        /* Body sits 20px lower than the title bar; actions get a matching
+           negative offset so the buttons stay where they were. */
+        #popup-empire .popup-body { gap: 10px; margin-top: 20px; }
+
+        /* Hero card — portrait fills the entire frame (no top/bottom gap),
+           and the level backing + rank icon sit ON TOP of the artwork. */
+        #popup-empire .popup-body .hero-card {
+            width: 26%;
+            aspect-ratio: 158 / 200;
+            align-self: flex-start;
+            /* Scale the frame artwork narrower so its inner opening edges
+               sit flush with the portrait's outer edges (was 100% 100%). */
+            background-size: 91% 100%;
+            background-position: center;
+        }
+        #popup-empire .hc-portrait {
+            top: 3%;
+            left: 0;
+            width: 100%;
+            height: 89%;          /* bottom edge ≈ 92% — flush with the inner frame */
+            object-position: center top;
+        }
+        #popup-empire .hc-level {
+            bottom: 4%;
+            top: auto;
+            height: 22%;
+            padding-left: 6%;
+            gap: 2px;
+            z-index: 3;          /* above portrait (z:1) */
+        }
+        #popup-empire .hc-rank { z-index: 4; }
+        #popup-empire .stats-header { font-size: clamp(11px, 1vw, 14px); margin-bottom: 0; }
+        #popup-empire .stats-grid { gap: 6px; }
+
+        /* Compact stat pill for the 2x2 grid */
+        #popup-empire .stat-pill {
+            min-height: 36px;
+            border-width: 8px;
+            gap: 4px;
+            padding: 0 6px 0 0;
+        }
+        #popup-empire .stat-pill .pill-icon {
+            width: clamp(24px, 2.3vw, 32px);
+            height: clamp(24px, 2.3vw, 32px);
+            margin-left: -8px;
+        }
+        #popup-empire .stat-pill .pill-value {
+            font-size: clamp(12px, 1.1vw, 16px);
+        }
+        #popup-empire .stat-pill .pill-bonus {
+            font-size: clamp(11px, 1vw, 14px);
+        }
+        #popup-empire .stat-pill .pill-arrow {
+            width: clamp(11px, 1vw, 14px);
+        }
+
+        /* Compact status indicator rows */
+        #popup-empire .status-section {
+            margin-top: 4px;
+            gap: 3px;
+        }
+        #popup-empire .status-row {
+            font-size: clamp(10px, 1vw, 13px);
+            gap: 6px;
+        }
+        #popup-empire .status-icon {
+            width: clamp(16px, 1.6vw, 22px);
+            height: clamp(16px, 1.6vw, 22px);
+        }
+
+        /* Compact action buttons + cost capsule */
+        #popup-empire .popup-actions { margin-top: -16px; gap: 80px; }
+        #popup-empire .popup-btn {
+            min-width: 0;
+            min-height: clamp(36px, 4vw, 50px);
+        }
+        #popup-empire .popup-btn-label {
+            font-size: clamp(12px, 1.3vw, 18px);
+            letter-spacing: 0.5px;
+        }
+        #popup-empire .cost-capsule {
+            min-height: 24px;
+            padding: 2px 18px 2px 14px;
+            gap: 12px;
+            border-width: 9px;
+        }
+        #popup-empire .cost-capsule .cost-item {
+            font-size: clamp(12px, 1.1vw, 16px);
+            gap: 6px;
+        }
+        #popup-empire .cost-capsule .cost-item img,
+        #popup-empire .cost-capsule .cost-item .cost-icon {
+            width: clamp(24px, 2.4vw, 32px);
+            height: clamp(24px, 2.4vw, 32px);
+        }
+        #popup-empire .popup-action .cost-capsule {
+            margin-bottom: -10px;
+        }
+
         /* Popup container — uses Popup Background.png as the frame */
         .popup {
             position: relative;
@@ -967,6 +1121,1391 @@
             width: 14px;
             height: 14px;
         }
+
+        /* ============================================================
+           CONQUEST GUIDE — side drawer (Whiteout Survival "Growth Guide" pattern)
+           Slides in from the left, anchored under the HUD button. The map
+           remains visible to the right; backdrop is transparent so the
+           player can still see context. Click outside the panel closes.
+           ============================================================ */
+        .conquest-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1500;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 200ms ease, visibility 200ms;
+        }
+        .conquest-overlay.open {
+            pointer-events: auto;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .conquest-panel {
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            transform: translate(-110%, -50%);
+            width: clamp(380px, 32vw, 460px);
+            height: min(86vh, 820px);
+            display: flex;
+            flex-direction: column;
+            border-radius: 18px;
+            border: 2px solid rgba(96, 220, 255, 0.55);
+            background:
+                linear-gradient(180deg, rgba(18, 36, 58, 0.96) 0%, rgba(8, 18, 34, 0.98) 100%);
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.5),
+                0 18px 40px rgba(0, 0, 0, 0.55),
+                inset 0 0 28px rgba(96, 220, 255, 0.12);
+            transition: transform 280ms cubic-bezier(0.34, 1.4, 0.64, 1),
+                        opacity 200ms ease;
+            opacity: 0;
+            /* `overflow: visible` so the close button can sit on top
+               of the rounded corner. The mission list manages its own
+               scroll clipping. */
+            overflow: visible;
+        }
+        .conquest-overlay.open .conquest-panel {
+            transform: translate(0, -50%);
+            opacity: 1;
+        }
+
+        /* Close button — top-right of the panel, slightly overhanging.
+           High z-index keeps it above the panel chrome AND any animating
+           reward floaters / FLIPped mission cards. */
+        .conquest-close {
+            position: absolute;
+            top: -14px;
+            right: -14px;
+            width: 44px;
+            height: 44px;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+        }
+        .conquest-close:hover { transform: scale(1.12) rotate(90deg); filter: brightness(1.15); }
+        .conquest-close:active { transform: scale(0.92) rotate(90deg); }
+        .conquest-close img { width: 100%; height: 100%; object-fit: contain;
+                              filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6)); }
+
+        /* Header */
+        .conquest-header {
+            padding: 18px 22px 12px;
+            border-bottom: 1px solid rgba(96, 220, 255, 0.18);
+            background: linear-gradient(180deg, rgba(96, 220, 255, 0.10), rgba(96, 220, 255, 0));
+        }
+        .conquest-title {
+            margin: 0;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 28px;
+            letter-spacing: 1.5px;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7),
+                         0 0 14px rgba(96, 220, 255, 0.45);
+            text-transform: uppercase;
+        }
+        .conquest-subtitle {
+            margin-top: 4px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            color: #8fc8e0;
+            letter-spacing: 0.5px;
+        }
+
+        /* Chapter tabs */
+        .conquest-chapters {
+            display: flex;
+            gap: 8px;
+            padding: 12px 22px 0;
+        }
+        .conquest-chapter {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            padding: 8px 0;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            color: #b8c8d8;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 140ms ease, color 140ms ease, transform 120ms ease;
+        }
+        .conquest-chapter:hover { background: rgba(96, 220, 255, 0.18); color: #fff; }
+        .conquest-chapter.is-active {
+            background: linear-gradient(180deg, #4ad7ff 0%, #2a90c7 100%);
+            color: #08243a;
+            border-color: rgba(96, 220, 255, 0.9);
+            box-shadow: 0 0 14px rgba(96, 220, 255, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        .conquest-chapter.is-locked {
+            color: #506072;
+            cursor: not-allowed;
+        }
+        .conquest-chapter.is-locked::after {
+            content: "🔒";
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 9px;
+            opacity: 0.7;
+        }
+
+        /* Chapter progress bar */
+        .conquest-progress {
+            padding: 12px 22px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .conquest-progress-bar {
+            position: relative;
+            height: 12px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(96, 220, 255, 0.25);
+            overflow: hidden;
+        }
+        .conquest-progress-fill {
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #4ad7ff 0%, #5cff7a 100%);
+            box-shadow: 0 0 8px rgba(92, 255, 122, 0.6);
+            transition: width 400ms cubic-bezier(0.4, 1, 0.4, 1);
+        }
+        .conquest-progress-text {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            color: #b8c8d8;
+            letter-spacing: 0.5px;
+            text-align: right;
+        }
+
+        /* Mission list (scrollable) */
+        .conquest-missions {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(96, 220, 255, 0.4) transparent;
+        }
+        .conquest-missions::-webkit-scrollbar { width: 6px; }
+        .conquest-missions::-webkit-scrollbar-track { background: transparent; }
+        .conquest-missions::-webkit-scrollbar-thumb {
+            background: rgba(96, 220, 255, 0.35);
+            border-radius: 3px;
+        }
+
+        /* Mission card */
+        .mission-card {
+            position: relative;
+            display: grid;
+            grid-template-columns: 60px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(40, 64, 90, 0.85), rgba(20, 36, 58, 0.85));
+            border: 1px solid rgba(96, 220, 255, 0.18);
+            transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+        }
+        .mission-card:hover { border-color: rgba(96, 220, 255, 0.45); }
+
+        .mission-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background:
+                radial-gradient(circle at 30% 30%, rgba(96, 220, 255, 0.25), rgba(0, 0, 0, 0.4)),
+                rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(96, 220, 255, 0.25);
+            overflow: hidden;
+        }
+        .mission-icon img {
+            width: 84%;
+            height: 84%;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+        }
+
+        .mission-body {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .mission-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+            line-height: 1.15;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+        .mission-rewards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 1px;
+        }
+        .mission-reward {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 6px 1px 4px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.45);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 12px;
+            color: #fffbe4;
+            line-height: 1;
+        }
+        .mission-reward img {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+        }
+        .mission-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .mission-progress-bar {
+            position: relative;
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+        .mission-progress-fill {
+            position: absolute;
+            inset: 0;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #4ad7ff, #82ffd1);
+            transition: width 400ms cubic-bezier(0.4, 1, 0.4, 1);
+        }
+        .mission-progress-text {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            color: #b8c8d8;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* Mission action button */
+        .mission-action {
+            min-width: 70px;
+            padding: 8px 12px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(180deg, #4ad7ff 0%, #1f8fc7 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                        0 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+        }
+        .mission-action:hover { transform: scale(1.05); filter: brightness(1.12); }
+        .mission-action:active { transform: scale(0.94); filter: brightness(0.86); }
+
+        /* Claimable state — green pulsing */
+        .mission-card.is-claimable {
+            background: linear-gradient(180deg, rgba(50, 100, 70, 0.9), rgba(30, 70, 50, 0.9));
+            border-color: rgba(92, 255, 122, 0.55);
+            box-shadow: 0 0 14px rgba(92, 255, 122, 0.18);
+        }
+        .mission-card.is-claimable .mission-action {
+            background: linear-gradient(180deg, #5cff7a 0%, #1faa3a 100%);
+            animation: missionClaimablePulse 1.4s ease-in-out infinite;
+        }
+        @keyframes missionClaimablePulse {
+            0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.4),
+                                   0 0 0 0 rgba(92, 255, 122, 0.7); }
+            50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,0.4),
+                                   0 0 14px 4px rgba(92, 255, 122, 0.55); }
+        }
+
+        /* Claimed state — faded with checkmark */
+        .mission-card.is-claimed {
+            opacity: 0.55;
+            filter: grayscale(0.4);
+        }
+        .mission-card.is-claimed .mission-action {
+            background: linear-gradient(180deg, #6f7a85 0%, #3a4250 100%);
+            cursor: default;
+            animation: none;
+        }
+        .mission-card.is-claimed .mission-action::before {
+            content: "✓ ";
+        }
+
+        /* Locked state */
+        .mission-card.is-locked {
+            opacity: 0.65;
+            filter: saturate(0.4);
+        }
+        .mission-card.is-locked .mission-icon::after {
+            content: "🔒";
+            position: absolute;
+            font-size: 22px;
+            text-shadow: 0 2px 3px rgba(0,0,0,0.8);
+        }
+        .mission-card.is-locked .mission-icon img { opacity: 0.35; }
+        .mission-card.is-locked .mission-action {
+            background: linear-gradient(180deg, #5a6470 0%, #2c343f 100%);
+            cursor: not-allowed;
+        }
+
+        /* Card reorder transitions (FLIP).
+           When a mission is claimed:
+             1. We capture every card's bbox (FIRST).
+             2. We instantly move the claimed card to the bottom of the DOM
+                and add `is-claimed`.
+             3. We capture every card's new bbox (LAST), apply the inverse
+                translateY as a transform, and on the next frame clear the
+                transform — the `flip-animating` transition does the rest.
+           The claimed card additionally pulses with a green flash during
+           its slide so it reads as a distinct "exit" beat, even though
+           technically it's traveling to its new resting place. */
+        .mission-card.flip-animating {
+            transition: transform 520ms cubic-bezier(0.34, 1.2, 0.64, 1);
+            will-change: transform;
+            z-index: 2;
+        }
+        .mission-card.is-claim-flash {
+            animation: missionClaimFlash 620ms cubic-bezier(0.4, 1, 0.4, 1);
+            z-index: 3;
+        }
+        @keyframes missionClaimFlash {
+            0%   { box-shadow: 0 0 0 0 rgba(92, 255, 122, 0);
+                   filter: brightness(1); }
+            18%  { box-shadow: 0 0 24px 6px rgba(92, 255, 122, 0.85);
+                   filter: brightness(1.25) saturate(1.15); }
+            55%  { box-shadow: 0 0 12px 3px rgba(92, 255, 122, 0.45);
+                   filter: brightness(1.08); }
+            100% { box-shadow: 0 0 0 0 rgba(92, 255, 122, 0);
+                   filter: brightness(1); }
+        }
+
+        /* ============================================================
+           SUMMON HERO — gacha screen + pull animation
+           Patterns: Genshin (color-tell beam → flash → reveal),
+           HSR (skip-to-result), Whiteout Survival (visible pity),
+           AFK (10x guaranteed-rare badge on the button).
+           ============================================================ */
+        .summon-screen {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 24px clamp(16px, 3vw, 36px);
+            color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+        .summon-banner {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 196, 80, 0.55);
+            box-shadow: 0 0 40px rgba(255, 196, 80, 0.18) inset;
+            min-height: clamp(220px, 28vh, 320px);
+            background:
+                radial-gradient(ellipse at 70% 100%, rgba(255, 196, 80, 0.35), transparent 60%),
+                linear-gradient(135deg, #1a2942 0%, #08172e 100%);
+        }
+        .summon-banner-art {
+            position: absolute;
+            inset: 0;
+            object-fit: cover;
+            object-position: center top;
+            opacity: 0.92;
+            mix-blend-mode: screen;
+        }
+        .summon-banner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px 22px;
+            background: linear-gradient(180deg,
+                rgba(0, 0, 0, 0.0) 0%,
+                rgba(0, 0, 0, 0.15) 60%,
+                rgba(0, 0, 0, 0.7) 100%);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+        }
+        .summon-banner-eyebrow {
+            font-weight: 700;
+            font-style: italic;
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: #ffd773;
+            text-transform: uppercase;
+        }
+        .summon-banner-title {
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(28px, 3.4vw, 44px);
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            line-height: 1;
+        }
+        .summon-banner-sub {
+            font-weight: 600;
+            font-size: 14px;
+            color: #ffe9b8;
+            margin-top: 4px;
+        }
+
+        /* Pity row */
+        .summon-pity {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 196, 80, 0.3);
+        }
+        .summon-pity-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            color: #ffd773;
+            text-transform: uppercase;
+        }
+        .summon-pity-label .summon-pity-num {
+            color: #fff;
+            font-weight: 900;
+        }
+        .summon-pity-bar {
+            position: relative;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            border: 1px solid rgba(255, 196, 80, 0.25);
+        }
+        .summon-pity-fill {
+            position: absolute;
+            inset: 0;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #ffd773 0%, #ff8a3a 50%, #ff4d6a 100%);
+            transition: width 320ms cubic-bezier(0.4, 1, 0.4, 1);
+            box-shadow: 0 0 10px rgba(255, 200, 90, 0.6);
+        }
+
+        /* Pull buttons row */
+        .summon-cta-row {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 16px;
+        }
+        .summon-pull-btn {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 18px 14px 14px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Barlow Condensed', sans-serif;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            background: linear-gradient(180deg, #4ad7ff 0%, #1f6db8 100%);
+            border: 2px solid rgba(120, 220, 255, 0.7);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter    140ms ease,
+                        box-shadow 140ms ease;
+        }
+        .summon-pull-btn:hover  { transform: translateY(-2px); filter: brightness(1.08); }
+        .summon-pull-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); filter: brightness(0.92); }
+        .summon-pull-btn.is-disabled {
+            cursor: not-allowed;
+            filter: grayscale(0.55) brightness(0.7);
+        }
+        .summon-pull-btn.is-disabled:hover { transform: none; }
+
+        .summon-pull-btn--gold {
+            background: linear-gradient(180deg, #ffd773 0%, #c47a16 100%);
+            border-color: rgba(255, 220, 130, 0.85);
+        }
+
+        .summon-pull-label {
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(18px, 2vw, 26px);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .summon-pull-cost {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px 4px 6px;
+            margin-top: 4px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.45);
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .summon-pull-cost img { width: 18px; height: 18px; object-fit: contain; }
+        .summon-pull-bonus {
+            margin-top: 4px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #b8ffd1;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .summon-pull-btn--gold .summon-pull-bonus { color: #fff5c2; }
+
+        /* Rates info */
+        .summon-rates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
+        }
+        .summon-rate {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            font-weight: 700;
+        }
+        .summon-rate-dot {
+            width: 9px; height: 9px; border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
+        }
+        .summon-rate.r-mythic    { color: #ff5cf0; }
+        .summon-rate.r-legendary { color: #ffc043; }
+        .summon-rate.r-epic      { color: #b066ff; }
+        .summon-rate.r-rare      { color: #4ad7ff; }
+        .summon-rate.r-uncommon  { color: #5cff7a; }
+        .summon-rate.r-common    { color: #c8d3df; }
+
+        /* ============================================================
+           SUMMON OVERLAY — pull animation + reveal
+           The overlay layers four pieces: orb (build-up), beam (color
+           tell), flash (climax), and a state-specific reveal section.
+           Lives ABOVE the menu z-index.
+           ============================================================ */
+        .summon-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            background: radial-gradient(circle at 50% 50%,
+                rgba(20, 30, 50, 0.85) 0%, rgba(0, 0, 0, 0.97) 75%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 220ms ease, visibility 220ms;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .summon-overlay.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* The orb — only visible during build-up */
+        .summon-orb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.4);
+            width: clamp(120px, 18vw, 240px);
+            height: clamp(120px, 18vw, 240px);
+            border-radius: 50%;
+            opacity: 0;
+            background: radial-gradient(circle at 35% 35%,
+                rgba(255, 245, 200, 0.95) 0%,
+                rgba(255, 200, 90, 0.85) 30%,
+                rgba(255, 120, 50, 0.6) 60%,
+                rgba(255, 60, 90, 0.0) 90%);
+            box-shadow: 0 0 80px rgba(255, 200, 90, 0.6),
+                        0 0 200px rgba(255, 120, 50, 0.35);
+            filter: blur(0px);
+            pointer-events: none;
+        }
+        .summon-overlay.is-summoning .summon-orb {
+            animation: summonOrbGather 1.4s cubic-bezier(0.5, 0, 0.4, 1) forwards;
+        }
+        @keyframes summonOrbGather {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); filter: blur(40px); }
+            30%  { opacity: 1; }
+            70%  { transform: translate(-50%, -50%) scale(1.1); filter: blur(0); }
+            100% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.35);
+                   box-shadow: 0 0 140px rgba(255, 220, 120, 0.9),
+                               0 0 320px rgba(255, 100, 60, 0.5); }
+        }
+
+        /* The beam — vertical color tell */
+        .summon-beam {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 0vh;
+            transform: translate(-50%, -50%);
+            border-radius: 4px;
+            opacity: 0;
+            pointer-events: none;
+            background: #fff;
+            box-shadow: 0 0 24px currentColor, 0 0 60px currentColor;
+        }
+        .summon-beam.is-active {
+            animation: summonBeamRise 600ms cubic-bezier(0.6, 0, 0.4, 1) forwards;
+        }
+        @keyframes summonBeamRise {
+            0%   { opacity: 0; height: 0vh; }
+            30%  { opacity: 1; }
+            100% { opacity: 1; height: 130vh; }
+        }
+        .summon-beam.rarity-common    { color: #c8d3df; background: #c8d3df; }
+        .summon-beam.rarity-uncommon  { color: #5cff7a; background: #5cff7a; }
+        .summon-beam.rarity-rare      { color: #4ad7ff; background: #4ad7ff; }
+        .summon-beam.rarity-epic      { color: #b066ff; background: #b066ff; }
+        .summon-beam.rarity-legendary { color: #ffc043; background: #ffc043; width: 14px; }
+        .summon-beam.rarity-mythic    { color: #ff5cf0; background: #ff5cf0; width: 18px;
+                                        box-shadow: 0 0 36px #ff5cf0, 0 0 80px #ffc043; }
+
+        /* The flash — full-screen rarity-keyed pulse */
+        .summon-flash {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%,
+                rgba(255, 255, 255, 0.95) 0%,
+                currentColor 40%,
+                transparent 80%);
+        }
+        .summon-flash.is-active {
+            animation: summonFlash 280ms ease-out forwards;
+        }
+        @keyframes summonFlash {
+            0%   { opacity: 0; }
+            40%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .summon-flash.rarity-common    { color: rgba(200, 211, 223, 0.5); }
+        .summon-flash.rarity-uncommon  { color: rgba(92, 255, 122, 0.6); }
+        .summon-flash.rarity-rare      { color: rgba(74, 215, 255, 0.7); }
+        .summon-flash.rarity-epic      { color: rgba(176, 102, 255, 0.8); }
+        .summon-flash.rarity-legendary { color: rgba(255, 192, 67, 0.9); }
+        .summon-flash.rarity-mythic    { color: rgba(255, 92, 240, 0.9); }
+
+        /* Skip prompt — only visible during build-up */
+        .summon-skip-hint {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 200ms ease;
+            pointer-events: none;
+        }
+        .summon-overlay.is-summoning .summon-skip-hint {
+            opacity: 1;
+            animation: summonSkipPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes summonSkipPulse {
+            0%, 100% { opacity: 0.55; }
+            50%      { opacity: 1; }
+        }
+
+        /* Reveal stages (single + grid) — hidden by default */
+        .summon-reveal,
+        .summon-result {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 6vh 4vw;
+            gap: 28px;
+        }
+        .summon-overlay.is-revealing .summon-reveal { display: flex; }
+        .summon-overlay.is-result    .summon-result { display: flex; }
+
+        /* ============================================================
+           NEW REVEAL SYSTEM — uses the .hero-card component (Gwen template)
+           with summon-specific overlays (NEW badge, glow halos, etc.)
+           ============================================================ */
+
+        /* Wrap that hosts a single hero card — controls size + entry pop */
+        .summon-single {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            animation: summonRevealIn 540ms cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+        @keyframes summonRevealIn {
+            0%   { opacity: 0; transform: scale(0.6) rotate(-3deg); }
+            70%  { opacity: 1; transform: scale(1.06) rotate(1deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+        .summon-single-card {
+            width: clamp(240px, 28vw, 360px);
+        }
+
+        /* The .hero-card component used for summon reveals.
+           Uses the SAME asset + structure as the Capital City popup card,
+           with summon-specific halos and overlays via a marker class. */
+        .summon-hero-card {
+            position: relative;
+            transition: filter 240ms ease;
+        }
+        .summon-hero-card[data-rarity="common"]    { box-shadow: 0 0 32px rgba(200, 211, 223, 0.35); }
+        .summon-hero-card[data-rarity="uncommon"]  { box-shadow: 0 0 32px rgba(92, 255, 122, 0.45); }
+        .summon-hero-card[data-rarity="rare"]      { box-shadow: 0 0 36px rgba(74, 215, 255, 0.55); }
+        .summon-hero-card[data-rarity="epic"]      { box-shadow: 0 0 44px rgba(176, 102, 255, 0.7); }
+        .summon-hero-card[data-rarity="legendary"] { box-shadow: 0 0 60px rgba(255, 192, 67, 0.85);
+                                                      animation: summonLegendaryHalo 2.2s ease-in-out infinite; }
+        .summon-hero-card[data-rarity="mythic"]    { box-shadow: 0 0 80px rgba(255, 92, 240, 0.9);
+                                                      animation: summonMythicHalo 2.6s ease-in-out infinite; }
+        @keyframes summonLegendaryHalo {
+            0%, 100% { box-shadow: 0 0 60px rgba(255, 192, 67, 0.6); }
+            50%      { box-shadow: 0 0 100px rgba(255, 192, 67, 1); }
+        }
+        @keyframes summonMythicHalo {
+            0%, 100% { box-shadow: 0 0 80px rgba(255, 92, 240, 0.7), 0 0 140px rgba(255, 192, 67, 0.4); }
+            50%      { box-shadow: 0 0 140px rgba(255, 92, 240, 1), 0 0 200px rgba(255, 192, 67, 0.7); }
+        }
+
+        /* Fallback portrait — when a hero has no full art, show its archetype
+           icon centered/contained inside the card opening */
+        .summon-hero-card .hc-portrait--icon {
+            object-fit: contain;
+            object-position: center;
+            padding: 18% 22%;
+            opacity: 0.85;
+        }
+
+        /* NEW badge — overlays the top-right corner */
+        .summon-card-badge {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .summon-card-new {
+            background: linear-gradient(180deg, #4ad7ff, #1f8fc7);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            animation: summonNewPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes summonNewPulse {
+            0%, 100% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(74, 215, 255, 0.7); }
+            50%      { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 14px 4px rgba(74, 215, 255, 0.55); }
+        }
+        .summon-card-dupe {
+            background: linear-gradient(180deg, #b066ff, #5a3a9a);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .summon-card-dupe small { opacity: 0.85; font-weight: 700; }
+
+        /* Tag (Featured 5★) shown only on single-reveal */
+        .summon-card-tag {
+            position: absolute;
+            bottom: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 3px 12px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffd773;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-style: italic;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 4;
+        }
+
+        /* Name + rank under the single card */
+        .summon-single-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(26px, 3vw, 40px);
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+            text-align: center;
+        }
+        .summon-single-rank {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(14px, 1.4vw, 20px);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.55);
+        }
+        .summon-rank-common    { color: #c8d3df; }
+        .summon-rank-uncommon  { color: #5cff7a; }
+        .summon-rank-rare      { color: #4ad7ff; }
+        .summon-rank-epic      { color: #b066ff; }
+        .summon-rank-legendary { color: #ffc043; text-shadow: 0 0 10px rgba(255, 192, 67, 0.5); }
+        .summon-rank-mythic    { color: #ff5cf0; text-shadow: 0 0 10px rgba(255, 92, 240, 0.7); }
+
+        /* Highlight hint — "Tap to see all 10" */
+        .summon-highlight-hint {
+            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-style: italic;
+            font-size: 14px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            animation: summonSkipPulse 1.6s ease-in-out infinite;
+        }
+
+        /* x10 result grid — uses the same .hero-card component, just smaller */
+        .summon-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+            max-width: 1020px;
+            width: 100%;
+        }
+        .summon-grid-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            animation: summonResultPop 420ms cubic-bezier(0.34, 1.5, 0.64, 1) forwards;
+        }
+        @keyframes summonResultPop {
+            0%   { opacity: 0; transform: scale(0.6) translateY(20px); }
+            70%  { opacity: 1; transform: scale(1.04); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .summon-grid-cell .summon-hero-card { width: 100%; }
+        .summon-grid-cell .hc-types { transform: scale(0.7); transform-origin: top left; }
+        .summon-grid-cell .hc-rank  { width: 38%; }
+        .summon-grid-cell .summon-card-badge { font-size: 9px; padding: 2px 7px; top: -4px; right: -6px; }
+        .summon-grid-cell .summon-card-tag   { display: none; }
+        .summon-grid-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+            text-align: center;
+        }
+
+        /* ============================================================
+           HIGHLIGHT STAGE (x10 with Epic+) — between flash and grid
+           ============================================================ */
+        .summon-highlight {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 6vh 4vw;
+            gap: 28px;
+        }
+        .summon-overlay.is-highlight .summon-highlight { display: flex; }
+
+        /* ============================================================
+           SELECTOR (hard-pity reward — player CHOOSES from 3 face-down)
+           Pattern #12 — Eternal Evolution / banner-spark
+           ============================================================ */
+        .summon-selector-stage {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 6vh 4vw;
+            gap: 18px;
+        }
+        .summon-overlay.is-selector .summon-selector-stage { display: flex; }
+        .summon-selector { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        .summon-selector-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(20px, 2.4vw, 32px);
+            letter-spacing: 2px;
+            color: #ffd773;
+            text-transform: uppercase;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8),
+                         0 0 18px rgba(255, 192, 67, 0.5);
+            text-align: center;
+        }
+        .summon-selector-row {
+            display: flex;
+            gap: clamp(14px, 2vw, 32px);
+            justify-content: center;
+            align-items: center;
+        }
+        .summon-selector-card {
+            width: clamp(180px, 22vw, 280px);
+            aspect-ratio: 158 / 223;
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+            transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter    220ms ease,
+                        opacity   320ms ease;
+            transform-style: preserve-3d;
+        }
+        .summon-selector-card:hover { transform: translateY(-8px) scale(1.04); filter: brightness(1.1); }
+        .summon-selector-card.is-discarded {
+            opacity: 0;
+            transform: scale(0.7) translateY(10px);
+            pointer-events: none;
+        }
+        .summon-selector-card.is-revealed {
+            transform: scale(1.06);
+            cursor: default;
+        }
+        .summon-selector-back {
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            background:
+                linear-gradient(180deg, #2a3a5e 0%, #08172e 100%);
+            border: 2px solid rgba(255, 192, 67, 0.6);
+            box-shadow: 0 0 28px rgba(255, 192, 67, 0.45),
+                        inset 0 0 24px rgba(255, 192, 67, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: summonSelectorBreath 2s ease-in-out infinite;
+        }
+        @keyframes summonSelectorBreath {
+            0%, 100% { box-shadow: 0 0 28px rgba(255, 192, 67, 0.45),
+                                   inset 0 0 24px rgba(255, 192, 67, 0.12); }
+            50%      { box-shadow: 0 0 50px rgba(255, 192, 67, 0.85),
+                                   inset 0 0 36px rgba(255, 192, 67, 0.25); }
+        }
+        .summon-selector-back-glyph {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(80px, 10vw, 140px);
+            color: #ffd773;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.7),
+                         0 0 30px rgba(255, 192, 67, 0.7);
+        }
+        .summon-selector-card.is-revealed .summon-selector-back { display: none; }
+        .summon-selector-hint {
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: summonSkipPulse 1.6s ease-in-out infinite;
+        }
+
+        /* ============================================================
+           JACKPOT FANFARE — rays from center + confetti for Legendary+
+           Pattern #9 — casino borrowing, fanfare for the climax
+           ============================================================ */
+        .summon-rays {
+            position: absolute;
+            inset: -50%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 280ms ease;
+            z-index: 0;
+            background:
+                conic-gradient(from 0deg,
+                    transparent 0deg, currentColor 8deg, transparent 16deg,
+                    transparent 30deg, currentColor 38deg, transparent 46deg,
+                    transparent 60deg, currentColor 68deg, transparent 76deg,
+                    transparent 90deg, currentColor 98deg, transparent 106deg,
+                    transparent 120deg, currentColor 128deg, transparent 136deg,
+                    transparent 150deg, currentColor 158deg, transparent 166deg,
+                    transparent 180deg, currentColor 188deg, transparent 196deg,
+                    transparent 210deg, currentColor 218deg, transparent 226deg,
+                    transparent 240deg, currentColor 248deg, transparent 256deg,
+                    transparent 270deg, currentColor 278deg, transparent 286deg,
+                    transparent 300deg, currentColor 308deg, transparent 316deg,
+                    transparent 330deg, currentColor 338deg, transparent 346deg,
+                    transparent 360deg);
+            -webkit-mask-image: radial-gradient(circle at 50% 50%, black 5%, transparent 65%);
+                    mask-image: radial-gradient(circle at 50% 50%, black 5%, transparent 65%);
+            color: rgba(255, 192, 67, 0.18);
+        }
+        .summon-rays.is-active {
+            opacity: 1;
+            animation: summonRaysSpin 14s linear infinite;
+        }
+        .summon-rays.rarity-mythic {
+            color: rgba(255, 92, 240, 0.22);
+        }
+        @keyframes summonRaysSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .summon-confetti {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 6;
+        }
+        .summon-confetti-piece {
+            position: absolute;
+            top: -30px;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            animation-name: summonConfettiFall;
+            animation-timing-function: cubic-bezier(0.5, 0.05, 0.4, 1);
+            animation-fill-mode: forwards;
+        }
+        @keyframes summonConfettiFall {
+            0%   { transform: translateY(0) rotate(0); opacity: 1; }
+            85%  { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Reveal action bar (Pull Again / Done) */
+        .summon-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .summon-actions .summon-pull-btn { padding: 12px 22px; }
+
+        /* Pre-pull anticipation — gentle pulse on x10 when affordable
+           (analyst pattern #1, the pre-pull beat) */
+        .summon-pull-btn.is-ready-pulse {
+            animation: summonReadyPulse 2.4s ease-in-out infinite;
+        }
+        @keyframes summonReadyPulse {
+            0%, 100% { box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35),
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                                   0 0 0 0 rgba(255, 220, 130, 0); }
+            50%      { box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35),
+                                   inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                                   0 0 24px 6px rgba(255, 220, 130, 0.45); }
+        }
+
+        /* Daily free pull tile — visible "FREE" badge when ready, on-cooldown
+           timer when used (analyst pattern #7) */
+        .summon-free-tile {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(180deg, rgba(50, 100, 70, 0.85), rgba(20, 50, 35, 0.9));
+            border: 1px solid rgba(92, 255, 122, 0.5);
+            transition: filter 160ms ease, transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .summon-free-tile.is-ready:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .summon-free-tile.is-cooldown {
+            background: linear-gradient(180deg, rgba(40, 50, 65, 0.85), rgba(20, 28, 40, 0.9));
+            border-color: rgba(120, 140, 170, 0.35);
+            cursor: not-allowed;
+            filter: grayscale(0.4) brightness(0.85);
+        }
+        .summon-free-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255, 245, 200, 0.95), rgba(255, 200, 90, 0.6));
+            box-shadow: 0 0 16px rgba(255, 200, 90, 0.5);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 20px;
+            color: #2a1d05;
+        }
+        .summon-free-tile.is-cooldown .summon-free-icon {
+            background: radial-gradient(circle at 35% 35%, #6f7a85, #3a4250);
+            box-shadow: none;
+            color: #c8d3df;
+        }
+        .summon-free-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .summon-free-state {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 18px;
+            letter-spacing: 1.5px;
+            color: #ffd773;
+            text-transform: uppercase;
+        }
+        .summon-free-tile.is-cooldown .summon-free-state { color: #c8d3df; }
+        .summon-free-cd {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            color: #b8c8d8;
+            letter-spacing: 0.5px;
+        }
+        .summon-free-tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #5cff7a, #1faa3a);
+            color: #002a08;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .summon-free-tile.is-cooldown .summon-free-tag {
+            background: rgba(80, 90, 110, 0.7);
+            color: #c8d3df;
+        }
+
+        /* ============================================================
+           COMING SOON PLACEHOLDER — used inside any fullscreen-menu that
+           has a feature shell but no content yet (Empire Summary, Heroes,
+           Offers, Store). Centered, on-brand, framed by the existing
+           menu shell so it still feels like a real screen.
+           ============================================================ */
+        .menu-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: clamp(360px, 60vh, 640px);
+            padding: 32px 24px;
+            text-align: center;
+            color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+        .menu-placeholder-icon {
+            width: clamp(96px, 14vw, 168px);
+            height: clamp(96px, 14vw, 168px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 35% 35%, rgba(96, 220, 255, 0.35), rgba(0, 0, 0, 0.6));
+            border: 2px solid rgba(96, 220, 255, 0.5);
+            box-shadow: 0 0 40px rgba(96, 220, 255, 0.25),
+                        inset 0 0 28px rgba(96, 220, 255, 0.15);
+            margin-bottom: 20px;
+        }
+        .menu-placeholder-icon img {
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+            opacity: 0.92;
+        }
+        .menu-placeholder-tag {
+            font-weight: 800;
+            font-style: italic;
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #ffd773;
+            margin-bottom: 6px;
+        }
+        .menu-placeholder-title {
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(28px, 3.4vw, 44px);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7),
+                         0 0 18px rgba(96, 220, 255, 0.35);
+            margin-bottom: 12px;
+        }
+        .menu-placeholder-body {
+            max-width: 520px;
+            font-weight: 600;
+            font-size: clamp(14px, 1.3vw, 18px);
+            line-height: 1.4;
+            color: #b8c8d8;
+        }
+        .menu-placeholder-eta {
+            margin-top: 18px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(96, 220, 255, 0.12);
+            border: 1px solid rgba(96, 220, 255, 0.4);
+            color: #4ad7ff;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Reward floater — a clone of the reward chip that flies from the
+           mission card to its target HUD pill, then triggers the inventory
+           pulse on landing. Positioned `fixed` so it can travel anywhere
+           on screen regardless of scroll/parent overflow. */
+        .reward-floater {
+            position: fixed;
+            z-index: 4000;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px 4px 6px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255, 230, 140, 0.95), rgba(255, 175, 70, 0.95));
+            color: #2a1d05;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            line-height: 1;
+            box-shadow: 0 0 14px rgba(255, 200, 90, 0.7),
+                        0 4px 8px rgba(0, 0, 0, 0.45);
+            pointer-events: none;
+            will-change: transform, opacity, left, top;
+            transition: left  720ms cubic-bezier(0.45, 0, 0.55, 1),
+                        top   720ms cubic-bezier(0.6, 0.04, 0.6, 1),
+                        transform 720ms cubic-bezier(0.5, 0, 0.5, 1),
+                        opacity   180ms ease 600ms;
+        }
+        .reward-floater img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+        }
+        .reward-floater.is-arrived {
+            opacity: 0;
+            transform: scale(0.3);
+        }
+
+        /* Chapter milestone reward — sticks to bottom */
+        .conquest-milestone {
+            display: grid;
+            grid-template-columns: 64px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            margin: 4px 14px 14px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background:
+                linear-gradient(180deg, rgba(120, 80, 30, 0.7), rgba(80, 50, 20, 0.85));
+            border: 1px solid rgba(255, 196, 80, 0.55);
+            box-shadow: 0 0 16px rgba(255, 196, 80, 0.18),
+                        inset 0 1px 0 rgba(255, 220, 130, 0.25);
+        }
+        .milestone-chest {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+        }
+        .milestone-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .milestone-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 17px;
+            color: #ffd773;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7), 0 0 10px rgba(255, 196, 80, 0.45);
+        }
+        .milestone-desc {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            color: #f0d7a8;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body>
@@ -977,7 +2516,7 @@
             <img src="../assets/backgrounds/World Map Zoom In.png" alt="World Map - Zoomed In" class="map-background bg-zoom-in">
 
             <!-- ISLAND TAP REGIONS — ZOOM OUT VIEW -->
-            <button class="tap-region tap-empire" data-zoom="out" onclick="openPopup('empire')" aria-label="Open Empire popup"></button>
+            <button class="tap-region tap-empire" data-zoom="out" onclick="openPopup('empire', this)" aria-label="Open Empire popup"></button>
 
             <!-- ISLAND LABELS — ZOOM OUT VIEW -->
             <div class="label label-empire" data-zoom="out">EMPIRE</div>
@@ -993,7 +2532,7 @@
             <div class="label label-pvp-3" data-zoom="out">PVP</div>
 
             <!-- ISLAND TAP REGIONS — ZOOM IN VIEW -->
-            <button class="tap-region tap-empire-zoomed" data-zoom="in" onclick="openPopup('empire')" aria-label="Open Empire popup"></button>
+            <button class="tap-region tap-empire-zoomed" data-zoom="in" onclick="openPopup('empire', this)" aria-label="Open Empire popup"></button>
 
             <!-- ISLAND LABELS — ZOOM IN VIEW (closer detail, fewer islands visible) -->
             <div class="label label-empire-z" data-zoom="in">EMPIRE</div>
@@ -1089,38 +2628,43 @@
             <div class="resources" data-inventory-hud></div>
 
             <!-- LEFT HUD BUTTONS -->
-            <div class="hud-btn btn-empire-summary" data-badge-target="empire-summary" data-badge-label="Empire Summary">
+            <div class="hud-btn btn-empire-summary tap-feedback" data-badge-target="empire-summary" data-badge-label="Empire Summary"
+                 onclick="Menu.open('empire-summary')">
                 <span class="hud-btn-label">Empire<br>Summary</span>
                 <span class="badge badge-arrow" title="Empire upgrades available">↑</span>
             </div>
-            <div class="hud-btn btn-conquest-guide" data-badge-target="conquest-guide" data-badge-label="Conquest Guide">
+            <div class="hud-btn btn-conquest-guide tap-feedback" data-badge-target="conquest-guide" data-badge-label="Conquest Guide"
+                 onclick="openConquestGuide()">
                 <span class="hud-btn-label">Conquest<br>Guide</span>
                 <span class="badge badge-dot" title="New conquest activity"></span>
             </div>
 
             <!-- BOTTOM LEFT: HEROES + BUILDINGS -->
-            <div class="heroes">
+            <div class="heroes tap-feedback" onclick="Army.openCollection()">
                 <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
                 <span class="heroes-label">Army</span>
             </div>
-            <div class="hud-btn btn-buildings" data-badge-target="buildings" data-badge-label="Buildings"
+            <div class="hud-btn btn-buildings tap-feedback" data-badge-target="buildings" data-badge-label="Buildings"
                  onclick="Menu.open('buildings')">
                 <span class="hud-btn-label">Buildings</span>
                 <span class="badge badge-arrow" title="Buildings can be upgraded">↑</span>
             </div>
 
             <!-- RIGHT HUD BUTTONS -->
-            <div class="hud-btn btn-offers" data-badge-target="offers" data-badge-label="Offers">
+            <div class="hud-btn btn-offers tap-feedback" data-badge-target="offers" data-badge-label="Offers"
+                 onclick="Menu.open('offers')">
                 <span class="hud-btn-label">Offers</span>
                 <span class="badge badge-new" title="New offers available">NEW</span>
             </div>
-            <div class="hud-btn btn-store" data-badge-target="store" data-badge-label="Store">
+            <div class="hud-btn btn-store tap-feedback" data-badge-target="store" data-badge-label="Store"
+                 onclick="Menu.open('store')">
                 <span class="hud-btn-label">Store</span>
                 <span class="badge badge-dot" title="Store update"></span>
             </div>
 
             <!-- BOTTOM RIGHT: SUMMON HERO -->
-            <div class="hud-btn hud-btn-large btn-summon" data-badge-target="summon" data-badge-label="Summon Hero">
+            <div class="hud-btn hud-btn-large btn-summon tap-feedback" data-badge-target="summon" data-badge-label="Summon Hero"
+                 onclick="Summon.openMenu()">
                 <span class="hud-btn-label">Summon<br>Hero</span>
                 <span class="badge badge-dot" title="Summon available"></span>
             </div>
@@ -1177,7 +2721,7 @@
                         <!-- Bottom: Level backing -->
                         <div class="hc-level">
                             <span class="hc-level-prefix">Lv</span>
-                            <span class="hc-level-num">888</span>
+                            <span class="hc-level-num">18</span>
                         </div>
 
                         <!-- Bottom-right: Rank icon -->
@@ -1189,34 +2733,36 @@
                         <div class="stats-header">Heroes Empire bonuses</div>
 
                         <div class="stats-grid">
-                            <div class="stat-row">
-                                <img src="../images/icons/inventory_gold.png" alt="">
-                                <div class="stat-text">
-                                    <div class="stat-rate">100/m</div>
-                                    <div class="stat-bonus">+1.1k</div>
-                                </div>
+                            <!-- Gold — stat increase variant (with bonus + arrow) -->
+                            <div class="stat-pill">
+                                <img class="pill-icon" src="../images/icons/inventory_gold.png" alt="">
+                                <span class="pill-spacer"></span>
+                                <span class="pill-value">100/m</span>
+                                <span class="pill-bonus">+1.1k</span>
+                                <img class="pill-arrow" src="../assets/icons/ui_icon_stat_increase.png" alt="">
                             </div>
 
-                            <div class="stat-row">
-                                <img src="../images/icons/inventory_steel.png" alt="">
-                                <div class="stat-text">
-                                    <div class="stat-rate">100/m</div>
-                                    <div class="stat-bonus">+1.1k</div>
-                                </div>
+                            <!-- Steel — stat increase variant -->
+                            <div class="stat-pill">
+                                <img class="pill-icon" src="../images/icons/inventory_steel.png" alt="">
+                                <span class="pill-spacer"></span>
+                                <span class="pill-value">100/m</span>
+                                <span class="pill-bonus">+1.1k</span>
+                                <img class="pill-arrow" src="../assets/icons/ui_icon_stat_increase.png" alt="">
                             </div>
 
-                            <div class="stat-row">
-                                <img src="../images/icons/inventory_brass.png" alt="">
-                                <div class="stat-text">
-                                    <div class="stat-rate">100/m</div>
-                                </div>
+                            <!-- Brass — default variant (no bonus) -->
+                            <div class="stat-pill">
+                                <img class="pill-icon" src="../images/icons/inventory_brass.png" alt="">
+                                <span class="pill-spacer"></span>
+                                <span class="pill-value">100/m</span>
                             </div>
 
-                            <div class="stat-row">
-                                <img src="../images/icons/inventory_coal.png" alt="">
-                                <div class="stat-text">
-                                    <div class="stat-rate">100/m</div>
-                                </div>
+                            <!-- Coal — default variant -->
+                            <div class="stat-pill">
+                                <img class="pill-icon" src="../images/icons/inventory_coal.png" alt="">
+                                <span class="pill-spacer"></span>
+                                <span class="pill-value">100/m</span>
                             </div>
                         </div>
 
@@ -1360,14 +2906,433 @@
         </div>
     </div>
 
+    <!-- ============================================================
+         CONQUEST GUIDE — side drawer (Whiteout Survival "Growth Guide")
+         Step-by-step progression missions. Each mission has a target,
+         reward preview, progress bar and a contextual action button:
+           GO     → navigate to the relevant feature (placeholder here)
+           CLAIM  → collect the reward (mission becomes "claimed")
+           LOCKED → previous mission must finish first
+         ============================================================ -->
+    <div class="conquest-overlay" id="conquest-guide" onclick="if(event.target===this)closeConquestGuide()">
+        <aside class="conquest-panel" role="dialog" aria-label="Conquest Guide">
+            <button class="conquest-close" onclick="closeConquestGuide()" aria-label="Close">
+                <img src="../assets/buttons/ui_btn_close.png" alt="">
+            </button>
+
+            <header class="conquest-header">
+                <h2 class="conquest-title">Conquest Guide</h2>
+                <div class="conquest-subtitle">Chapter 1 — Rise of the Empire</div>
+            </header>
+
+            <!-- Chapter tabs (current chapter highlighted, future chapters locked) -->
+            <div class="conquest-chapters">
+                <button class="conquest-chapter is-active">Ch 1</button>
+                <button class="conquest-chapter">Ch 2</button>
+                <button class="conquest-chapter is-locked">Ch 3</button>
+                <button class="conquest-chapter is-locked">Ch 4</button>
+                <button class="conquest-chapter is-locked">Ch 5</button>
+            </div>
+
+            <!-- Chapter progress (live-updates as missions are claimed) -->
+            <div class="conquest-progress">
+                <div class="conquest-progress-bar">
+                    <div class="conquest-progress-fill" id="conquest-progress-fill" style="width: 33%"></div>
+                </div>
+                <div class="conquest-progress-text"><span id="conquest-progress-count">2</span> / 6 missions complete</div>
+            </div>
+
+            <!-- Mission list -->
+            <div class="conquest-missions" id="conquest-missions">
+
+                <!-- 1. CLAIMED — first build (already collected) -->
+                <article class="mission-card is-claimed" data-mission="m1">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_currency_lumber.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Found your Capital City</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">10k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_steel.png">5k</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:100%"></div></div>
+                            <span class="mission-progress-text">1 / 1</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" disabled>Claimed</button>
+                </article>
+
+                <!-- 2. CLAIMED — early upgrade -->
+                <article class="mission-card is-claimed" data-mission="m2">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_currency_steel.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Upgrade a Resource Generator to Lv 3</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">15k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_meteorite.png">3</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:100%"></div></div>
+                            <span class="mission-progress-text">3 / 3</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" disabled>Claimed</button>
+                </article>
+
+                <!-- 3. CLAIMABLE — completed, awaiting collection -->
+                <article class="mission-card is-claimable" data-mission="m3">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_icon_archetype_hero_tank.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Recruit your first hero</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">25k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_brass.png">100</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_XP.png">500</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:100%"></div></div>
+                            <span class="mission-progress-text">1 / 1</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" onclick="claimMission('m3')">Claim</button>
+                </article>
+
+                <!-- 4. IN PROGRESS — partial -->
+                <article class="mission-card" data-mission="m4">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_map_banner_battle_boss.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Defeat 5 roaming monsters</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">30k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_fuel.png">120</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_meteorite.png">5</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:60%"></div></div>
+                            <span class="mission-progress-text">3 / 5</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" onclick="missionGo('m4')">Go</button>
+                </article>
+
+                <!-- 5. IN PROGRESS — power up -->
+                <article class="mission-card" data-mission="m5">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_icon_rank_04.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Power any hero to Level 10</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">50k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_brass.png">250</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:10%"></div></div>
+                            <span class="mission-progress-text">1 / 10</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" onclick="missionGo('m5')">Go</button>
+                </article>
+
+                <!-- 6. LOCKED — unlocks after a prior mission -->
+                <article class="mission-card is-locked" data-mission="m6">
+                    <div class="mission-icon">
+                        <img src="../assets/icons/ui_icon_archetype_attack.png" alt="">
+                    </div>
+                    <div class="mission-body">
+                        <div class="mission-title">Capture your first territory</div>
+                        <div class="mission-rewards">
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_gold.png">100k</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_meteorite.png">10</span>
+                            <span class="mission-reward"><img src="../assets/icons/ui_currency_brass.png">500</span>
+                        </div>
+                        <div class="mission-progress">
+                            <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:0%"></div></div>
+                            <span class="mission-progress-text">0 / 1</span>
+                        </div>
+                    </div>
+                    <button class="mission-action" disabled>Locked</button>
+                </article>
+
+            </div>
+
+            <!-- Chapter milestone reward (claimed once all missions are claimed) -->
+            <div class="conquest-milestone">
+                <img class="milestone-chest" src="../assets/icons/ui_currency_meteorite.png" alt="Chest">
+                <div class="milestone-info">
+                    <div class="milestone-title">Chapter 1 Reward</div>
+                    <div class="milestone-desc">Hero summon scroll · 100k gold · 25 meteorite</div>
+                </div>
+                <button class="mission-action" id="conquest-milestone-btn" disabled>Locked</button>
+            </div>
+        </aside>
+    </div>
+
     <script>
         // ===== Popup =====
-        function openPopup(name) {
+        // Pass an `anchor` element to pin the popup next to it (no backdrop).
+        // Without anchor, falls back to the centered modal style.
+        function openPopup(name, anchor) {
             const el = document.getElementById('popup-' + name);
-            if (el) el.classList.add('open');
+            if (!el) return;
+            el.classList.add('open');
+            if (anchor) {
+                el.classList.add('anchored');
+                positionPopupNextTo(el, anchor);
+                // Defer attaching click-outside listener so the click that
+                // opened the popup doesn't immediately close it.
+                setTimeout(() => document.addEventListener('click', closeOnOutsideClick, true), 0);
+                // Reposition on resize/scroll while open
+                window.addEventListener('resize', () => positionPopupNextTo(el, anchor));
+            }
         }
+
         function closePopup() {
-            document.querySelectorAll('.popup-overlay.open').forEach(el => el.classList.remove('open'));
+            document.removeEventListener('click', closeOnOutsideClick, true);
+            document.querySelectorAll('.popup-overlay.open').forEach(el => {
+                el.classList.remove('open', 'anchored');
+                const popup = el.querySelector('.popup');
+                if (popup) {
+                    popup.style.left = '';
+                    popup.style.top  = '';
+                }
+            });
+        }
+
+        function closeOnOutsideClick(e) {
+            // Ignore clicks inside the popup itself
+            if (e.target.closest('.popup')) return;
+            // Ignore clicks on the same anchor that opened it
+            if (e.target.closest('.tap-region, .empire-tower, .map-prop')) return;
+            closePopup();
+        }
+
+        // Position the popup next to its anchor (right side preferred,
+        // flips to left if it would overflow off-screen).
+        function positionPopupNextTo(overlay, anchor) {
+            const popup = overlay.querySelector('.popup');
+            if (!popup) return;
+            const a = anchor.getBoundingClientRect();
+            // Force a layout pass so we can measure popup dimensions
+            popup.style.visibility = 'hidden';
+            popup.style.left = '0px';
+            popup.style.top  = '0px';
+            const p = popup.getBoundingClientRect();
+            const gap = 16;
+            const margin = 16;
+
+            // Default: right of the anchor, vertically centered on the anchor
+            let left = a.right + gap;
+            let top  = a.top + (a.height - p.height) / 2;
+
+            // Flip to left side if right would overflow
+            if (left + p.width > window.innerWidth - margin) {
+                left = a.left - p.width - gap;
+            }
+            // Clamp into viewport
+            left = Math.max(margin, Math.min(left, window.innerWidth - p.width - margin));
+            top  = Math.max(margin, Math.min(top,  window.innerHeight - p.height - margin));
+
+            popup.style.left = left + 'px';
+            popup.style.top  = top + 'px';
+            popup.style.visibility = '';
+        }
+
+        // ===== Conquest Guide drawer =====
+        const conquestGuide = document.getElementById('conquest-guide');
+
+        function openConquestGuide() {
+            conquestGuide.classList.add('open');
+            // Clear the HUD badge — player has acknowledged the guide
+            const hudBtn = document.querySelector('.btn-conquest-guide');
+            if (hudBtn) {
+                const badge = hudBtn.querySelector('.badge');
+                if (badge) badge.style.display = 'none';
+            }
+        }
+        function closeConquestGuide() {
+            conquestGuide.classList.remove('open');
+        }
+
+        // Map: reward chip icon basename → inventory resource id.
+        // Anything not in this map flies to the resource container as a
+        // generic fallback (used for XP / unmapped rewards).
+        const REWARD_ICON_TO_RESOURCE = {
+            'ui_currency_gold':      'gold',
+            'ui_currency_steel':     'steel',
+            'ui_currency_brass':     'brass',
+            'ui_currency_coal':      'coal',
+            'ui_currency_fuel':      'fuel',
+            'ui_currency_meteorite': 'meteorite',
+            'resource_gold':         'gold',
+            'resource_steel':        'steel',
+            'resource_brass':        'brass',
+            'resource_coal':         'coal',
+            'resource_energy':       'fuel',
+            'resource_meteorite':    'meteorite',
+        };
+
+        function rewardResourceFromIcon(imgEl) {
+            if (!imgEl) return null;
+            const m = imgEl.getAttribute('src').match(/\/([^/]+?)\.(png|jpg|webp)$/i);
+            if (!m) return null;
+            return REWARD_ICON_TO_RESOURCE[m[1]] || null;
+        }
+
+        // Fly a single reward chip from the card to its HUD pill.
+        // On arrival: add to inventory (which triggers the pill's pulse
+        // + floating "+N" via the existing inventory.js bindings).
+        function flyReward(srcChip, resourceId, amount, delay) {
+            const srcRect = srcChip.getBoundingClientRect();
+            const target = resourceId
+                ? document.querySelector(`.resource[data-resource="${resourceId}"]`)
+                : null;
+            const fallback = document.querySelector('.resources');
+            const dst = target || fallback;
+            if (!dst) return;
+            const dstRect = dst.getBoundingClientRect();
+
+            const floater = document.createElement('div');
+            floater.className = 'reward-floater';
+            floater.innerHTML = srcChip.innerHTML;
+            floater.style.left = srcRect.left + 'px';
+            floater.style.top  = srcRect.top  + 'px';
+            document.body.appendChild(floater);
+
+            // Kick off the journey on the next frame so the transition runs
+            setTimeout(() => {
+                floater.style.left = (dstRect.left + dstRect.width / 2 - 14) + 'px';
+                floater.style.top  = (dstRect.top  + dstRect.height / 2 - 14) + 'px';
+                floater.style.transform = 'scale(0.6)';
+            }, 20 + delay);
+
+            // On arrival: pulse the pill via Inventory.add (which already
+            // animates inv-pulse-add + spawns the +N floater)
+            const FLIGHT_MS = 740 + delay;
+            setTimeout(() => {
+                if (resourceId && window.Inventory) {
+                    window.Inventory.add(resourceId, amount);
+                }
+                floater.classList.add('is-arrived');
+                setTimeout(() => floater.remove(), 220);
+            }, FLIGHT_MS);
+        }
+
+        // Collect rewards from a mission card's chips and fly them to inventory.
+        function flyMissionRewards(card) {
+            const chips = card.querySelectorAll('.mission-reward');
+            chips.forEach((chip, i) => {
+                const img = chip.querySelector('img');
+                const resourceId = rewardResourceFromIcon(img);
+                // Parse amount from the chip text (strip "k", "M", commas)
+                const text = chip.textContent.trim().replace(/,/g, '');
+                let amount = parseFloat(text) || 0;
+                if (/k$/i.test(text)) amount *= 1000;
+                else if (/m$/i.test(text)) amount *= 1_000_000;
+                amount = Math.round(amount);
+                flyReward(chip, resourceId, amount, i * 110);
+            });
+        }
+
+        // Claim a completed mission with full animation:
+        //  1. Rewards fly out to the HUD inventory pills (each lands →
+        //     pulse + Inventory.add → "+N" floater above the pill).
+        //  2. Claimed card moves to the bottom of the list (DOM reorder).
+        //  3. FLIP: every card animates from its old slot to its new one.
+        //     Remaining cards slide up to fill the gap; the claimed card
+        //     slides down with a green flash overlay as its "exit" beat.
+        function claimMission(id) {
+            const card = document.querySelector(`.mission-card[data-mission="${id}"]`);
+            const list = document.getElementById('conquest-missions');
+            if (!card || !list || !card.classList.contains('is-claimable')) return;
+
+            // Reward fly-out + inventory pulse fires immediately
+            flyMissionRewards(card);
+
+            // Lock the card so it can't be re-claimed during the animation
+            card.classList.remove('is-claimable');
+            const btn = card.querySelector('.mission-action');
+            if (btn) { btn.disabled = true; btn.textContent = 'Claimed'; }
+
+            // ---- FLIP reorder ----
+            const allCards = Array.from(list.querySelectorAll('.mission-card'));
+            const firstRects = new Map(allCards.map(c => [c, c.getBoundingClientRect()]));
+
+            // Apply the state change instantly: claimed style + move to bottom
+            card.classList.add('is-claimed');
+            list.appendChild(card);
+
+            // Capture LAST positions and invert
+            allCards.forEach(c => {
+                const first = firstRects.get(c);
+                const last  = c.getBoundingClientRect();
+                const dy = first.top - last.top;
+                if (Math.abs(dy) < 1) return;
+                c.style.transform = `translateY(${dy}px)`;
+                c.style.transition = 'none';
+                c.classList.add('flip-animating');
+            });
+
+            // Play: clear transforms next frame so the transition runs
+            requestAnimationFrame(() => {
+                allCards.forEach(c => {
+                    c.style.transition = '';   // restore the .flip-animating transition
+                    c.style.transform = '';
+                });
+                // The claimed card gets a distinct green flash during its slide
+                card.classList.add('is-claim-flash');
+            });
+
+            // Cleanup once everything has settled
+            setTimeout(() => {
+                allCards.forEach(c => c.classList.remove('flip-animating'));
+                card.classList.remove('is-claim-flash');
+                refreshConquestProgress();
+            }, 640);
+        }
+
+        // Recompute the chapter progress bar and unlock the milestone chest
+        // once everything in the chapter is claimed.
+        function refreshConquestProgress() {
+            const all = document.querySelectorAll('#conquest-missions .mission-card');
+            const claimed = document.querySelectorAll('#conquest-missions .mission-card.is-claimed');
+            const pct = all.length ? (claimed.length / all.length) * 100 : 0;
+            const fill = document.getElementById('conquest-progress-fill');
+            const count = document.getElementById('conquest-progress-count');
+            if (fill)  fill.style.width = pct + '%';
+            if (count) count.textContent = claimed.length;
+
+            const milestoneBtn = document.getElementById('conquest-milestone-btn');
+            if (!milestoneBtn) return;
+            if (claimed.length === all.length && all.length > 0) {
+                milestoneBtn.textContent = 'Claim';
+                milestoneBtn.disabled = false;
+                milestoneBtn.onclick = function () {
+                    milestoneBtn.textContent = 'Claimed';
+                    milestoneBtn.disabled = true;
+                    milestoneBtn.style.opacity = '0.6';
+                };
+            } else {
+                milestoneBtn.textContent = 'Locked';
+                milestoneBtn.disabled = true;
+                milestoneBtn.onclick = null;
+                milestoneBtn.style.opacity = '';
+            }
+        }
+
+        // "Go" button — would normally route the player to the relevant
+        // feature (heroes screen, world map, etc.). For prototype: just close.
+        function missionGo(id) {
+            closeConquestGuide();
+            // Future: route per id, e.g. id==='m4' → focus a monster island.
         }
 
         // ===== Zoom =====
@@ -1411,12 +3376,400 @@
 
         // Initialize button state
         setZoom('out');
+
+        // ===== Tap ripple — visual feedback on island taps =====
+        // Adds a brief expanding white pulse at the click point on any
+        // .tap-region (the invisible island overlays on the world map).
+        document.addEventListener('click', (e) => {
+            const tap = e.target.closest('.tap-region');
+            if (!tap) return;
+            const rect = tap.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'tap-ripple';
+            ripple.style.left = (e.clientX - rect.left) + 'px';
+            ripple.style.top  = (e.clientY - rect.top)  + 'px';
+            tap.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 800);
+        }, true);  // capture so we get it before openPopup() runs
     </script>
 
     <!-- ================================================================
          FULL-SCREEN MENU: BUILDINGS
          Opened by clicking the Buildings HUD button.
          ================================================================ -->
+    <!-- ================================================================
+         STUB MENUS — placeholder shells for unbuilt HUD destinations.
+         Each is a real fullscreen-menu so the player can navigate in/out
+         normally; the body shows a polished "Coming Soon" placeholder
+         using the shared .menu-placeholder component.
+         ================================================================ -->
+
+    <!-- Empire Summary -->
+    <div class="fullscreen-menu" id="menu-empire-summary">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">EMPIRE SUMMARY</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="menu-placeholder">
+                <div class="menu-placeholder-icon">
+                    <img src="../assets/buttons/Map HUD Button Empire Summary.png" alt="">
+                </div>
+                <div class="menu-placeholder-tag">Overview</div>
+                <div class="menu-placeholder-title">Empire Summary</div>
+                <div class="menu-placeholder-body">
+                    Snapshot of your kingdom — production rates, troop counts, hero roster,
+                    alliance standing, and pending upgrades — all on one screen.
+                </div>
+                <div class="menu-placeholder-eta">Coming Soon</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Heroes / Army Collection -->
+    <div class="fullscreen-menu" id="menu-heroes">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">ARMY COLLECTION</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="army-layout">
+                <!-- Left rail: All Heroes / Troops tabs -->
+                <nav class="army-rail" aria-label="Army filters">
+                    <button class="army-rail-tab is-active" data-army-filter="all">
+                        <div class="army-rail-icon">
+                            <img src="../assets/buttons/Map HUD Button Army.png" alt="">
+                        </div>
+                        <span class="army-rail-label">All Heroes</span>
+                    </button>
+                    <button class="army-rail-tab" data-army-filter="troops">
+                        <div class="army-rail-icon">
+                            <img src="../assets/icons/ui_icon_archetype_troop_melee.png" alt="">
+                        </div>
+                        <span class="army-rail-label">Troops</span>
+                    </button>
+                </nav>
+
+                <!-- Right side: toolbar + grid -->
+                <div class="army-content">
+                    <div class="army-toolbar">
+                        <div class="army-sort">Rarity</div>
+                    </div>
+                    <div class="army-grid" id="army-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Info Screen -->
+    <div class="fullscreen-menu" id="menu-hero-info">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title" id="hero-info-title">HERO INFO</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="hero-info-layout">
+                <nav class="army-rail" aria-label="Hero sub-screens">
+                    <button class="army-rail-tab is-active">
+                        <div class="army-rail-icon"><img src="../assets/buttons/ui_btn_secondary_info.png" alt=""></div>
+                        <span class="army-rail-label">Hero Info</span>
+                    </button>
+                    <button class="army-rail-tab">
+                        <div class="army-rail-icon"><img src="../assets/buttons/ui_btn_secondary_attributes.png" alt=""></div>
+                        <span class="army-rail-label">Attributes</span>
+                    </button>
+                    <button class="army-rail-tab">
+                        <div class="army-rail-icon"><img src="../assets/buttons/ui_btn_secondary_ability.png" alt=""></div>
+                        <span class="army-rail-label">Abilities</span>
+                    </button>
+                    <button class="army-rail-tab">
+                        <div class="army-rail-icon"><img src="../assets/icons/ui_icon_tab_rank.png" alt=""></div>
+                        <span class="army-rail-label">Stats</span>
+                    </button>
+                </nav>
+                <div id="hero-info-root"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Level Up -->
+    <div class="fullscreen-menu" id="menu-hero-levelup">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">LEVEL UP</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="hero-levelup-layout">
+                <nav class="army-rail" aria-label="Level Up nav">
+                    <button class="army-rail-tab is-active">
+                        <div class="army-rail-icon"><img src="../assets/buttons/ui_btn_secondary_info.png" alt=""></div>
+                        <span class="army-rail-label">Level Up</span>
+                    </button>
+                </nav>
+                <div id="hero-levelup-root"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gear Selection -->
+    <div class="fullscreen-menu" id="menu-gear-selection">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">GEAR</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="gear-layout">
+                <nav class="army-rail" aria-label="Gear nav">
+                    <button class="army-rail-tab is-active">
+                        <div class="army-rail-icon"><img src="../assets/icons/ui_icon_card_gear_empty_chest.png" alt=""></div>
+                        <span class="army-rail-label">Gear</span>
+                    </button>
+                </nav>
+                <div id="gear-root"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forge Gear -->
+    <div class="fullscreen-menu" id="menu-forge-gear">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">FORGE GEAR</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="forge-layout">
+                <nav class="army-rail" aria-label="Forge nav">
+                    <button class="army-rail-tab is-active">
+                        <div class="army-rail-icon"><img src="../assets/icons/ui_icon_gearset_fury.png" alt=""></div>
+                        <span class="army-rail-label">Forge</span>
+                    </button>
+                </nav>
+                <div id="forge-root"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offers -->
+    <div class="fullscreen-menu" id="menu-offers">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">OFFERS</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="menu-placeholder">
+                <div class="menu-placeholder-icon">
+                    <img src="../assets/buttons/Map HUD Button Offers.png" alt="">
+                </div>
+                <div class="menu-placeholder-tag">Limited-time</div>
+                <div class="menu-placeholder-title">Special Offers</div>
+                <div class="menu-placeholder-body">
+                    Featured bundles, starter packs, daily deals, and event
+                    collaborations — refreshes on a schedule with countdown timers.
+                </div>
+                <div class="menu-placeholder-eta">Coming Soon</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store -->
+    <div class="fullscreen-menu" id="menu-store">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">STORE</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+        <div class="menu-body">
+            <div class="menu-placeholder">
+                <div class="menu-placeholder-icon">
+                    <img src="../assets/buttons/Map HUD Button Store.png" alt="">
+                </div>
+                <div class="menu-placeholder-tag">Permanent</div>
+                <div class="menu-placeholder-title">Empire Store</div>
+                <div class="menu-placeholder-body">
+                    Always-available currencies, resource packs, speed-ups,
+                    and cosmetics. Tabbed by category with clear price tiers.
+                </div>
+                <div class="menu-placeholder-eta">Coming Soon</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         MENU: SUMMON HERO (gacha)
+         ================================================================
+         Banner art + pity + currency + two pull buttons (x1, x10).
+         The pull animation overlay sits on top with z-index 5000 and is
+         orchestrated by summon.js.
+         ================================================================ -->
+    <div class="fullscreen-menu" id="menu-summon">
+        <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
+
+        <header class="menu-header">
+            <button class="menu-back" data-menu-close aria-label="Back to map">
+                <img src="../assets/buttons/ui_btn_back.png" alt="">
+            </button>
+            <h1 class="menu-title">SUMMON HERO</h1>
+            <div class="menu-resources" data-inventory-hud></div>
+        </header>
+
+        <div class="menu-body">
+            <div class="summon-screen">
+                <!-- Banner art with featured hero -->
+                <div class="summon-banner">
+                    <img class="summon-banner-art"
+                         src="../assets/characters/Gwen/ui_ftue_npc_gwen.png"
+                         alt="Featured Hero">
+                    <div class="summon-banner-overlay">
+                        <div>
+                            <div class="summon-banner-eyebrow">Limited Banner · Ends in 6d 14h</div>
+                            <div class="summon-banner-title">Rise of Gwen</div>
+                            <div class="summon-banner-sub">Featured 5★ Mythic · Increased rates this week</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pity counter (visible progress to guaranteed legendary+) -->
+                <div class="summon-pity">
+                    <div class="summon-pity-label">
+                        <span>Next guaranteed Legendary</span>
+                        <span class="summon-pity-num" id="summon-pity-num">0 / 60</span>
+                    </div>
+                    <div class="summon-pity-bar">
+                        <div class="summon-pity-fill" id="summon-pity-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Pull buttons -->
+                <div class="summon-cta-row">
+                    <button class="summon-pull-btn tap-feedback" data-summon-pull="1">
+                        <span class="summon-pull-label">Summon</span>
+                        <span class="summon-pull-cost">
+                            <img src="../images/icons/inventory_brass.png" alt="">
+                            <span>150</span>
+                        </span>
+                    </button>
+                    <button class="summon-pull-btn summon-pull-btn--gold tap-feedback" data-summon-pull="10">
+                        <span class="summon-pull-label">Summon × 10</span>
+                        <span class="summon-pull-cost">
+                            <img src="../images/icons/inventory_brass.png" alt="">
+                            <span>1,350</span>
+                        </span>
+                        <span class="summon-pull-bonus">+1 Rare guaranteed</span>
+                    </button>
+                </div>
+
+                <!-- Daily Free Pull tile (analyst pattern #7 — single most
+                     effective retention loop in the genre) -->
+                <div class="summon-free-tile is-ready" id="summon-free-tile" data-summon-free>
+                    <div class="summon-free-icon">★</div>
+                    <div class="summon-free-text">
+                        <span class="summon-free-state" data-free-state>FREE</span>
+                        <span class="summon-free-cd"    data-free-cd>Ready now</span>
+                    </div>
+                    <span class="summon-free-tag">Daily Pull</span>
+                </div>
+
+                <!-- Drop rates table -->
+                <div class="summon-rates">
+                    <span class="summon-rate r-mythic">    <span class="summon-rate-dot" style="background:#ff5cf0"></span> Mythic 0.3%</span>
+                    <span class="summon-rate r-legendary"> <span class="summon-rate-dot" style="background:#ffc043"></span> Legendary 1.7%</span>
+                    <span class="summon-rate r-epic">      <span class="summon-rate-dot" style="background:#b066ff"></span> Epic 5%</span>
+                    <span class="summon-rate r-rare">      <span class="summon-rate-dot" style="background:#4ad7ff"></span> Rare 13%</span>
+                    <span class="summon-rate r-uncommon">  <span class="summon-rate-dot" style="background:#5cff7a"></span> Uncommon 30%</span>
+                    <span class="summon-rate r-common">    <span class="summon-rate-dot" style="background:#c8d3df"></span> Common 50%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pull animation overlay (lives inside the summon menu so it
+             unmounts when the menu closes) -->
+        <div class="summon-overlay" id="summon-overlay">
+            <div class="summon-orb"></div>
+            <div class="summon-beam" id="summon-beam"></div>
+            <div class="summon-flash" id="summon-flash"></div>
+            <div class="summon-skip-hint">Tap to skip</div>
+
+            <!-- SINGLE-PULL REVEAL -->
+            <div class="summon-reveal" id="summon-reveal-wrap">
+                <div id="summon-reveal"></div>
+                <div class="summon-actions">
+                    <button class="summon-pull-btn" data-summon-action="pull-1">
+                        <span class="summon-pull-label">Summon</span>
+                        <span class="summon-pull-cost">
+                            <img src="../images/icons/inventory_brass.png" alt=""><span>150</span>
+                        </span>
+                    </button>
+                    <button class="summon-pull-btn summon-pull-btn--gold" data-summon-action="pull-10">
+                        <span class="summon-pull-label">x10</span>
+                        <span class="summon-pull-cost">
+                            <img src="../images/icons/inventory_brass.png" alt=""><span>1,350</span>
+                        </span>
+                    </button>
+                    <button class="summon-pull-btn" data-summon-action="close" style="background:linear-gradient(180deg,#5a6470,#2c343f);">
+                        <span class="summon-pull-label">Done</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- x10 HIGHLIGHT — rarest hero pops big first if Epic+ -->
+            <div class="summon-highlight" id="summon-highlight-wrap">
+                <div id="summon-highlight"></div>
+            </div>
+
+            <!-- x10 RESULT GRID -->
+            <div class="summon-result" id="summon-result-wrap">
+                <div id="summon-result"></div>
+                <div class="summon-actions">
+                    <button class="summon-pull-btn summon-pull-btn--gold" data-summon-action="pull-10">
+                        <span class="summon-pull-label">Summon x10 again</span>
+                        <span class="summon-pull-cost">
+                            <img src="../images/icons/inventory_brass.png" alt=""><span>1,350</span>
+                        </span>
+                    </button>
+                    <button class="summon-pull-btn" data-summon-action="close" style="background:linear-gradient(180deg,#5a6470,#2c343f);">
+                        <span class="summon-pull-label">Done</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SELECTOR (hard-pity reward — pick from 3 face-down cards) -->
+            <div class="summon-selector-stage">
+                <div id="summon-selector"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="fullscreen-menu" id="menu-buildings">
         <img class="menu-bg" src="../assets/backgrounds/ui_bg_fullscreen_default.png" alt="">
 
@@ -2030,37 +4383,37 @@
         <!-- Map overlay: HUD buttons + active battle indicators -->
         <div class="empire-overlay">
             <!-- LEFT HUD -->
-            <div class="hud-btn btn-empire-summary">
+            <div class="hud-btn btn-empire-summary tap-feedback" onclick="Menu.open('empire-summary')">
                 <span class="hud-btn-label">Empire<br>Summary</span>
                 <span class="badge badge-arrow">↑</span>
             </div>
-            <div class="hud-btn btn-conquest-guide">
+            <div class="hud-btn btn-conquest-guide tap-feedback" onclick="openConquestGuide()">
                 <span class="hud-btn-label">Conquest<br>Guide</span>
                 <span class="badge badge-dot"></span>
             </div>
 
             <!-- BOTTOM-LEFT: Heroes (large) + Buildings -->
-            <div class="heroes" onclick="Menu.open('buildings')">
+            <div class="heroes tap-feedback" onclick="Army.openCollection()">
                 <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
                 <span class="heroes-label">Army</span>
             </div>
-            <div class="hud-btn btn-buildings" onclick="Menu.open('buildings')">
+            <div class="hud-btn btn-buildings tap-feedback" onclick="Menu.open('buildings')">
                 <span class="hud-btn-label">Buildings</span>
                 <span class="badge badge-arrow">↑</span>
             </div>
 
             <!-- RIGHT HUD -->
-            <div class="hud-btn btn-offers">
+            <div class="hud-btn btn-offers tap-feedback" onclick="Menu.open('offers')">
                 <span class="hud-btn-label">Offers</span>
                 <span class="badge badge-new">NEW</span>
             </div>
-            <div class="hud-btn btn-store">
+            <div class="hud-btn btn-store tap-feedback" onclick="Menu.open('store')">
                 <span class="hud-btn-label">Store</span>
                 <span class="badge badge-dot"></span>
             </div>
 
             <!-- BOTTOM-RIGHT: Summon Hero -->
-            <div class="hud-btn hud-btn-large btn-summon">
+            <div class="hud-btn hud-btn-large btn-summon tap-feedback" onclick="Summon.openMenu()">
                 <span class="hud-btn-label">Summon<br>Hero</span>
                 <span class="badge badge-dot"></span>
             </div>
@@ -2093,6 +4446,10 @@
     <script src="inventory.js"></script>
     <!-- Full-screen menu / tab system (Buildings, etc.) -->
     <script src="menus.js"></script>
+    <!-- Summon Hero (gacha) system -->
+    <script src="summon.js"></script>
+    <!-- Army Collection / Hero Info / Level Up / Gear / Forge -->
+    <script src="army.js"></script>
     <!-- Notification debug panel (toggle with the bug button bottom-left or press D) -->
     <script src="debug-panel.js"></script>
 </body>

@@ -23,7 +23,9 @@
       "Bash(awk '/<div class=\"popup-overlay\" id=\"popup-empire\"/{found=1} found{print NR\": \"$0; if\\(/^    <\\\\/div>$/\\){print \"---END---\"; exit}}' /Users/uxmachine/Documents/UX_Prototype_02/app/world-map.html)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl *)",
+      "mcp__figma__get_metadata"
     ]
   }
 }

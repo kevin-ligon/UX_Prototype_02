@@ -39,6 +39,7 @@
         <div class="debug-tabs">
             <button class="debug-tab active" data-tab="badges">Badges</button>
             <button class="debug-tab" data-tab="inventory">Inventory</button>
+            <button class="debug-tab" data-tab="conquest">Conquest</button>
             <button class="debug-tab" data-tab="positions">Positions</button>
         </div>
 
@@ -83,6 +84,30 @@
                 <button class="debug-btn" data-action="inv-reset">Reset</button>
             </div>
             <div class="debug-list" id="inventoryList"></div>
+        </div>
+
+        <!-- CONQUEST TAB -->
+        <div class="debug-tab-panel" data-panel="conquest" hidden>
+            <div class="debug-section-title">Conquest Guide</div>
+            <div class="debug-subtitle" style="padding: 0 18px 8px;">
+                Open the guide and exercise the claim/animation flow.
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn" data-action="cq-open">Open Guide</button>
+                <button class="debug-btn" data-action="cq-close">Close Guide</button>
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn" data-action="cq-claim-next">Claim Next</button>
+                <button class="debug-btn" data-action="cq-claim-all">Claim All</button>
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn" data-action="cq-mark-claimable">Mark Next Claimable</button>
+                <button class="debug-btn" data-action="cq-advance">Advance Progress (+1)</button>
+            </div>
+            <div class="debug-actions">
+                <button class="debug-btn danger" data-action="cq-reset">Reset Chapter</button>
+            </div>
+            <div class="debug-list" id="conquestList"></div>
         </div>
 
         <div class="debug-footer">
@@ -384,6 +409,224 @@
     });
 
     // ============================================================
+    // CONQUEST TAB
+    // ============================================================
+    // Lets us exercise the Conquest Guide: open/close the drawer,
+    // claim individual missions to test the fly-to-inventory animation,
+    // mark missions claimable to verify state transitions, and reset
+    // the chapter to its initial DOM snapshot.
+    const cqListEl = panel.querySelector('#conquestList');
+    let conquestSnapshot = null;   // outerHTML of #conquest-missions on first init
+
+    function captureConquestSnapshot() {
+        const list = document.getElementById('conquest-missions');
+        if (list && conquestSnapshot === null) {
+            conquestSnapshot = list.innerHTML;
+        }
+    }
+
+    function getMissionCards() {
+        return Array.from(document.querySelectorAll('#conquest-missions .mission-card'));
+    }
+
+    function missionState(card) {
+        if (card.classList.contains('is-claimed'))     return 'claimed';
+        if (card.classList.contains('is-claimable'))   return 'claimable';
+        if (card.classList.contains('is-locked'))      return 'locked';
+        return 'progress';
+    }
+
+    function renderConquestList() {
+        const cards = getMissionCards();
+        if (cards.length === 0) {
+            cqListEl.innerHTML = '<div class="debug-subtitle" style="padding:0 18px;">No missions found. Open the guide once to mount it.</div>';
+            return;
+        }
+        cqListEl.innerHTML = cards.map(card => {
+            const id    = card.dataset.mission;
+            const title = card.querySelector('.mission-title')?.textContent || id;
+            const state = missionState(card);
+            return `
+                <div class="debug-item" data-cq-row="${id}">
+                    <div class="debug-item-row">
+                        <span class="debug-item-name" style="flex:1;">${title}</span>
+                        <span class="debug-item-name" style="opacity:.65;font-size:11px;">${state}</span>
+                    </div>
+                    <div class="debug-item-row">
+                        <button class="debug-btn" data-cq-state="${id}" data-state="claimable">Claimable</button>
+                        <button class="debug-btn" data-cq-state="${id}" data-state="progress">In&nbsp;Progress</button>
+                        <button class="debug-btn" data-cq-state="${id}" data-state="locked">Locked</button>
+                        <button class="debug-btn" data-cq-state="${id}" data-state="claimed">Claimed</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Wire per-mission state buttons
+        cqListEl.querySelectorAll('[data-cq-state]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setMissionState(btn.dataset.cqState, btn.dataset.state);
+                renderConquestList();
+                if (typeof window.refreshConquestProgress === 'function') {
+                    window.refreshConquestProgress();
+                }
+            });
+        });
+    }
+
+    // Force a mission card into a particular state (no animations — just
+    // toggles classes and sets the action button text/disabled).
+    function setMissionState(id, state) {
+        const card = document.querySelector(`#conquest-missions .mission-card[data-mission="${id}"]`);
+        if (!card) return;
+        card.classList.remove('is-claimed', 'is-claimable', 'is-locked');
+        const action = card.querySelector('.mission-action');
+        const fill   = card.querySelector('.mission-progress-fill');
+        const text   = card.querySelector('.mission-progress-text');
+
+        if (state === 'claimable') {
+            card.classList.add('is-claimable');
+            if (fill) fill.style.width = '100%';
+            if (text) {
+                const m = (text.textContent || '').match(/\/\s*(\d+)/);
+                const total = m ? m[1] : '1';
+                text.textContent = `${total} / ${total}`;
+            }
+            if (action) {
+                action.textContent = 'Claim';
+                action.disabled = false;
+                action.onclick = () => window.claimMission(id);
+            }
+        } else if (state === 'progress') {
+            if (fill) fill.style.width = '40%';
+            if (text) {
+                const m = (text.textContent || '').match(/\/\s*(\d+)/);
+                const total = m ? parseInt(m[1], 10) : 5;
+                text.textContent = `${Math.max(1, Math.floor(total * 0.4))} / ${total}`;
+            }
+            if (action) {
+                action.textContent = 'Go';
+                action.disabled = false;
+                action.onclick = () => window.missionGo(id);
+            }
+        } else if (state === 'locked') {
+            card.classList.add('is-locked');
+            if (fill) fill.style.width = '0%';
+            if (text) {
+                const m = (text.textContent || '').match(/\/\s*(\d+)/);
+                const total = m ? m[1] : '1';
+                text.textContent = `0 / ${total}`;
+            }
+            if (action) {
+                action.textContent = 'Locked';
+                action.disabled = true;
+                action.onclick = null;
+            }
+        } else if (state === 'claimed') {
+            card.classList.add('is-claimed');
+            if (fill) fill.style.width = '100%';
+            if (text) {
+                const m = (text.textContent || '').match(/\/\s*(\d+)/);
+                const total = m ? m[1] : '1';
+                text.textContent = `${total} / ${total}`;
+            }
+            if (action) {
+                action.textContent = 'Claimed';
+                action.disabled = true;
+                action.onclick = null;
+            }
+        }
+    }
+
+    // Wire the top-level conquest action buttons
+    panel.querySelectorAll('[data-action^="cq-"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            captureConquestSnapshot();
+
+            if (action === 'cq-open' && typeof window.openConquestGuide === 'function') {
+                window.openConquestGuide();
+            } else if (action === 'cq-close' && typeof window.closeConquestGuide === 'function') {
+                window.closeConquestGuide();
+            } else if (action === 'cq-claim-next') {
+                const next = getMissionCards().find(c => c.classList.contains('is-claimable'));
+                if (next && typeof window.claimMission === 'function') {
+                    window.claimMission(next.dataset.mission);
+                }
+            } else if (action === 'cq-claim-all') {
+                // Mark every non-claimed card claimable, then claim them in
+                // sequence with a small delay so the animation can play out.
+                const claimables = getMissionCards()
+                    .filter(c => !c.classList.contains('is-claimed'))
+                    .map(c => c.dataset.mission);
+                claimables.forEach(id => setMissionState(id, 'claimable'));
+                claimables.forEach((id, i) => {
+                    setTimeout(() => {
+                        if (typeof window.claimMission === 'function') {
+                            window.claimMission(id);
+                        }
+                    }, i * 850);
+                });
+            } else if (action === 'cq-mark-claimable') {
+                const next = getMissionCards().find(c =>
+                    !c.classList.contains('is-claimed') &&
+                    !c.classList.contains('is-claimable')
+                );
+                if (next) {
+                    setMissionState(next.dataset.mission, 'claimable');
+                }
+            } else if (action === 'cq-advance') {
+                // Pick the first non-claimed, non-claimable in-progress card
+                // and bump its progress by 1 step (or flip to claimable when
+                // it hits the target).
+                const card = getMissionCards().find(c => {
+                    const s = missionState(c);
+                    return s === 'progress' || s === 'locked';
+                });
+                if (card) {
+                    const text = card.querySelector('.mission-progress-text');
+                    const fill = card.querySelector('.mission-progress-fill');
+                    if (text && fill) {
+                        const m = text.textContent.match(/(\d+)\s*\/\s*(\d+)/);
+                        if (m) {
+                            const cur = Math.min(parseInt(m[1], 10) + 1, parseInt(m[2], 10));
+                            const tot = parseInt(m[2], 10);
+                            text.textContent = `${cur} / ${tot}`;
+                            fill.style.width = (cur / tot * 100) + '%';
+                            // Unlock + flip to claimable when complete
+                            card.classList.remove('is-locked');
+                            if (cur >= tot) {
+                                setMissionState(card.dataset.mission, 'claimable');
+                            }
+                        }
+                    }
+                }
+            } else if (action === 'cq-reset') {
+                const list = document.getElementById('conquest-missions');
+                if (list && conquestSnapshot !== null) {
+                    list.innerHTML = conquestSnapshot;
+                    // Re-bind onclick on each action button (innerHTML wipes JS bindings)
+                    list.querySelectorAll('.mission-card').forEach(card => {
+                        const id = card.dataset.mission;
+                        const action = card.querySelector('.mission-action');
+                        if (!action) return;
+                        if (card.classList.contains('is-claimable')) {
+                            action.onclick = () => window.claimMission(id);
+                        } else if (!card.classList.contains('is-claimed') &&
+                                   !card.classList.contains('is-locked')) {
+                            action.onclick = () => window.missionGo(id);
+                        }
+                    });
+                }
+            }
+            renderConquestList();
+            if (typeof window.refreshConquestProgress === 'function') {
+                window.refreshConquestProgress();
+            }
+        });
+    });
+
+    // ============================================================
     // POSITIONS TAB
     // ============================================================
     // Live-edits the CSS for badge positions per element category.
@@ -597,6 +840,10 @@
             panel.querySelectorAll('.debug-tab-panel').forEach(p => {
                 p.hidden = (p.dataset.panel !== target);
             });
+            if (target === 'conquest') {
+                captureConquestSnapshot();
+                renderConquestList();
+            }
         });
     });
 
@@ -614,6 +861,9 @@
         initPositionState();
         renderPositionList();
         applyPositions();
+        // Conquest: snapshot the initial mission list so Reset can restore it
+        captureConquestSnapshot();
+        renderConquestList();
     }
 
     if (document.readyState === 'loading') {
