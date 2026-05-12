@@ -1,0 +1,452 @@
+/* ============================================================
+   UI INSPECTOR — toggleable design overlay for fast feedback
+   Layers (each independently toggleable):
+     1. Grid           pixel grid for measuring spacing/snap
+     2. Box outlines   dashed rings around interactive elements
+     3. Spacing        margin/padding overlay on hover
+     4. Tap targets    red ring on anything < 44 px
+     5. Cursor coords  live xy chip following the mouse
+     6. Click-inspect  click any element → side panel with details
+   Toggle the whole thing with the U key or the floating button.
+   z-index 9990+ so it sits above everything (menus, popups, summon).
+   ============================================================ */
+
+/* ----- Floating toggle button (bottom-left, near debug panel) ----- */
+.uii-launcher {
+    position: fixed;
+    left: 16px;
+    bottom: 64px;     /* sits above the debug-panel toggle (which is at 16px) */
+    width: 44px;
+    height: 44px;
+    z-index: 9988;
+    border: 1px solid rgba(96, 220, 255, 0.55);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(40, 60, 90, 0.95), rgba(15, 30, 50, 0.98));
+    color: #4ad7ff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 140ms ease;
+}
+.uii-launcher:hover  { transform: translateY(-2px); filter: brightness(1.15); }
+.uii-launcher:active { transform: scale(0.94); }
+.uii-launcher.is-active {
+    background: linear-gradient(180deg, #4ad7ff, #1f6db8);
+    color: #08243a;
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 14px rgba(96, 220, 255, 0.65);
+}
+
+/* ----- Top toolbar (visible when inspector is on) ----- */
+.uii-bar {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9989;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background:
+        linear-gradient(180deg, rgba(20, 30, 50, 0.96), rgba(10, 20, 36, 0.98));
+    border: 1px solid rgba(96, 220, 255, 0.4);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    font-family: 'Barlow Condensed', sans-serif;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+}
+.uii-bar.is-open { display: inline-flex; }
+
+.uii-section {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    border-right: 1px solid rgba(96, 220, 255, 0.18);
+}
+.uii-section:last-child { border-right: none; }
+.uii-section-label {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffd773;
+    margin-right: 4px;
+}
+.uii-toggle {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(96, 220, 255, 0.35);
+    background: rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 140ms ease, background 140ms ease;
+}
+.uii-toggle:hover { filter: brightness(1.18); background: rgba(96, 220, 255, 0.18); }
+.uii-toggle.is-on {
+    background: linear-gradient(180deg, #4ad7ff, #1f6db8);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.uii-select {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(96, 220, 255, 0.35);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 900;
+}
+.uii-close {
+    width: 30px;
+    height: 30px;
+    margin-left: 6px;
+    background: rgba(255, 100, 100, 0.2);
+    border: 1px solid rgba(255, 100, 100, 0.5);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+}
+.uii-close:hover { background: rgba(255, 100, 100, 0.4); }
+
+/* ============================================================
+   GRID OVERLAY — single fixed div with layered background lines.
+   Two grid sizes: minor lines (8/16/24 px) and major lines every
+   80/100/100 px so you can quickly count blocks.
+   ============================================================ */
+.uii-grid {
+    position: fixed;
+    inset: 0;
+    z-index: 9985;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(rgba(96, 220, 255, 0.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.10) 1px, transparent 1px);
+    /* Order: major-h, major-v, minor-h, minor-v */
+    background-size:
+        80px 80px,
+        80px 80px,
+        8px 8px,
+        8px 8px;
+}
+.uii-grid.size-16 {
+    background-image:
+        linear-gradient(rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(rgba(96, 220, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.12) 1px, transparent 1px);
+    background-size:
+        96px 96px,
+        96px 96px,
+        16px 16px,
+        16px 16px;
+}
+.uii-grid.size-24 {
+    background-image:
+        linear-gradient(rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(rgba(96, 220, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 220, 255, 0.12) 1px, transparent 1px);
+    background-size:
+        120px 120px,
+        120px 120px,
+        24px 24px,
+        24px 24px;
+}
+/* Centerlines — thin yellow lines marking 50% horizontal/vertical */
+.uii-centerlines {
+    position: fixed;
+    inset: 0;
+    z-index: 9986;
+    pointer-events: none;
+    background:
+        linear-gradient(rgba(255, 220, 130, 0.6) 1px, transparent 1px) 0 50% / 100% 100% no-repeat,
+        linear-gradient(90deg, rgba(255, 220, 130, 0.6) 1px, transparent 1px) 50% 0 / 100% 100% no-repeat;
+}
+
+/* ============================================================
+   BOX OUTLINES — when active, every interactive element gets a
+   dashed outline. Uses outline (not border) so layout doesn't shift.
+   ============================================================ */
+body.uii-boxes-on .hud-btn,
+body.uii-boxes-on .heroes,
+body.uii-boxes-on .popup-btn,
+body.uii-boxes-on .menu-back,
+body.uii-boxes-on .popup-close,
+body.uii-boxes-on .summon-pull-btn,
+body.uii-boxes-on .summon-free-tile,
+body.uii-boxes-on .summon-overlay [data-summon-action],
+body.uii-boxes-on .mission-card,
+body.uii-boxes-on .mission-action,
+body.uii-boxes-on .conquest-close,
+body.uii-boxes-on .conquest-chapter,
+body.uii-boxes-on .army-rail-tab,
+body.uii-boxes-on .hero-card,
+body.uii-boxes-on .hero-ability,
+body.uii-boxes-on .hero-gear-slot,
+body.uii-boxes-on .hero-action-btn,
+body.uii-boxes-on .gear-card-action,
+body.uii-boxes-on .gear-slot-tab,
+body.uii-boxes-on .gear-inv-card,
+body.uii-boxes-on .levelup-item,
+body.uii-boxes-on .forge-action,
+body.uii-boxes-on [onclick],
+body.uii-boxes-on .tap-feedback {
+    outline: 1.5px dashed rgba(255, 92, 240, 0.85);
+    outline-offset: -1.5px;
+}
+
+/* ============================================================
+   TAP-TARGET CHECK — red ring on anything < 44×44 px.
+   The body class is the toggle; individual elements get .uii-too-small
+   added by JS once their bbox is measured.
+   ============================================================ */
+body.uii-tap-on .uii-too-small {
+    outline: 2.5px solid rgba(255, 80, 80, 0.95) !important;
+    outline-offset: -2.5px !important;
+    box-shadow: 0 0 14px rgba(255, 80, 80, 0.7) !important;
+}
+
+/* ============================================================
+   SPACING INSPECTOR — drawn on hover. Three rect overlays:
+   margin (orange), padding (green), content (blue tint).
+   ============================================================ */
+.uii-spacing-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 9987;
+    pointer-events: none;
+}
+.uii-spacing-rect {
+    position: absolute;
+    pointer-events: none;
+}
+.uii-spacing-margin  { background: rgba(255, 168, 70, 0.22); outline: 1px dashed rgba(255, 168, 70, 0.7); }
+.uii-spacing-padding { background: rgba(92, 255, 122, 0.18); outline: 1px dashed rgba(92, 255, 122, 0.7); }
+.uii-spacing-content { background: rgba(74, 215, 255, 0.20); outline: 1px solid rgba(74, 215, 255, 0.85); }
+
+/* Floating dimension chip — sits next to the hovered element */
+.uii-dim-chip {
+    position: fixed;
+    z-index: 9991;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(10, 20, 36, 0.98);
+    border: 1.5px solid rgba(74, 215, 255, 0.85);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ============================================================
+   CURSOR COORDS — small pill that follows the mouse
+   ============================================================ */
+.uii-cursor {
+    position: fixed;
+    z-index: 9992;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(10, 20, 36, 0.98);
+    border: 1.5px solid rgba(255, 220, 130, 0.85);
+    color: #ffd773;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    transform: translate(16px, 16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ============================================================
+   CLICK-INSPECT — selected element gets a glowing outline + a
+   side panel with details + Copy buttons.
+   ============================================================ */
+.uii-selected-outline {
+    position: fixed;
+    z-index: 9993;
+    pointer-events: none;
+    outline: 2px solid #ff5cf0;
+    outline-offset: 1px;
+    box-shadow: 0 0 22px rgba(255, 92, 240, 0.75);
+    border-radius: 4px;
+}
+
+.uii-detail {
+    position: fixed;
+    top: 76px;
+    right: 16px;
+    width: clamp(340px, 28vw, 440px);
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    z-index: 9994;
+    padding: 18px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(20, 30, 50, 0.97), rgba(8, 18, 34, 0.99));
+    border: 1.5px solid rgba(255, 92, 240, 0.65);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6),
+                inset 0 0 24px rgba(255, 92, 240, 0.08);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    display: none;
+}
+.uii-detail.is-open { display: block; }
+.uii-detail h3 {
+    margin: 0 0 12px 0;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #ff5cf0;
+    text-transform: uppercase;
+}
+.uii-detail-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(96, 220, 255, 0.2);
+}
+.uii-detail-section:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.uii-detail-label {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffd773;
+    margin-bottom: 6px;
+}
+.uii-detail-value {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    word-break: break-all;
+    line-height: 1.45;
+}
+.uii-detail-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 10px;
+    margin-bottom: 6px;
+    align-items: center;
+}
+.uii-detail-row span:first-child {
+    color: #8fc8e0;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+.uii-detail-row span:last-child {
+    color: #fff;
+    font-weight: 900;
+    font-size: 15px;
+    word-break: break-all;
+}
+.uii-detail-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    vertical-align: middle;
+    margin-right: 6px;
+}
+.uii-copy-btn {
+    margin-top: 10px;
+    margin-right: 8px;
+    padding: 8px 14px;
+    border: 1.5px solid rgba(74, 215, 255, 0.65);
+    background: rgba(74, 215, 255, 0.18);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 140ms ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.uii-copy-btn:hover { filter: brightness(1.25); }
+.uii-copy-btn.is-copied {
+    background: rgba(92, 255, 122, 0.25);
+    border-color: rgba(92, 255, 122, 0.7);
+    color: #5cff7a;
+}
+
+/* ============================================================
+   HOTKEYS HELP TIP — appears briefly when inspector first opens
+   ============================================================ */
+.uii-help {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 9995;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(10, 20, 36, 0.98);
+    border: 1.5px solid rgba(96, 220, 255, 0.55);
+    color: #ffffff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+.uii-help strong {
+    font-weight: 900;
+    color: #ffd773;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-right: 4px;
+}
+.uii-help.is-visible { opacity: 1; }
+.uii-help kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 0 3px;
+    border-radius: 4px;
+    background: rgba(96, 220, 255, 0.22);
+    border: 1px solid rgba(96, 220, 255, 0.6);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
