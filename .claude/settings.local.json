@@ -33,7 +33,8 @@
       "Bash(pkill -f \"Google Chrome\")",
       "Bash(pkill -f \"http.server\")",
       "Skill(crop-icons)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(git fetch *)"
     ]
   }
 }
