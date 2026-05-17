@@ -164,6 +164,16 @@
       <button class="debug-btn" data-action="bg-active">Bg: Active</button>
       <button class="debug-btn" data-action="bg-disabled">Bg: Disabled</button>
     </div>
+    <div class="debug-actions" style="padding-top: 0;">
+      <!-- Export: download every map-related localStorage key as JSON.
+           Import: pick a JSON file to apply the same settings here.
+           Lets you carry your local map customizations onto another
+           origin (e.g., the live GitHub Pages site) where localStorage
+           doesn't follow the code. -->
+      <button class="debug-btn" data-action="export-settings" title="Download all map settings as JSON">Export</button>
+      <button class="debug-btn" data-action="import-settings" title="Load a previously exported JSON">Import</button>
+      <input type="file" id="msImportFile" accept="application/json,.json" hidden>
+    </div>
 
     <div class="debug-list" style="padding: 12px 18px;">
 
@@ -599,6 +609,86 @@
     });
     panel.querySelector('[data-action="bg-disabled"]').addEventListener('click', () => {
       state.bgVariant = 'disabled'; wm.setBackgroundVariant('disabled');
+    });
+
+    // ---- Export / Import ----------------------------------------
+    // Carries every map-related localStorage key between origins, so
+    // the customizations you made on file:// or localhost can land
+    // on https://kevin-ligon.github.io (same code, different storage).
+    //
+    // Coverage = every key whose name starts with one of these
+    // prefixes. Catches both the world-map (`wm-v3-*`, `wm-states-*`)
+    // and the reef map (`reef-map-v1-*`) without hard-coding key names.
+    const EXPORT_PREFIXES = ['wm-v3-', 'wm-states-', 'reef-map-v1-'];
+
+    function collectMapKeys() {
+      const out = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && EXPORT_PREFIXES.some(p => k.startsWith(p))) {
+          out[k] = localStorage.getItem(k);
+        }
+      }
+      return out;
+    }
+
+    panel.querySelector('[data-action="export-settings"]').addEventListener('click', () => {
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        origin: location.origin || 'file://',
+        href: location.href,
+        keys: collectMapKeys(),
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `map-settings-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      const keyCount = Object.keys(payload.keys).length;
+      console.log(`[map-states] exported ${keyCount} keys`);
+    });
+
+    const importInput = panel.querySelector('#msImportFile');
+    panel.querySelector('[data-action="import-settings"]').addEventListener('click', () => {
+      importInput.click();
+    });
+    importInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let payload;
+        try { payload = JSON.parse(reader.result); }
+        catch (_) { alert('Import failed: file is not valid JSON.'); return; }
+        if (!payload || typeof payload.keys !== 'object') {
+          alert('Import failed: JSON missing a "keys" object.');
+          return;
+        }
+        const keyCount = Object.keys(payload.keys).length;
+        const ok = window.confirm(
+          `Import ${keyCount} map setting${keyCount === 1 ? '' : 's'}?\n\n` +
+          `This OVERWRITES your current settings on this page.\n` +
+          `The page will reload after import.`
+        );
+        if (!ok) { importInput.value = ''; return; }
+        // First, wipe any existing map keys on this origin so a partial
+        // import doesn't leave half-old / half-new state behind.
+        const existing = collectMapKeys();
+        Object.keys(existing).forEach(k => localStorage.removeItem(k));
+        // Then write the imported keys.
+        Object.entries(payload.keys).forEach(([k, v]) => {
+          try { localStorage.setItem(k, v); } catch (_) {}
+        });
+        importInput.value = '';
+        location.reload();
+      };
+      reader.readAsText(file);
     });
 
     // Per-island toggles, grouped by category. Each category renders as a
