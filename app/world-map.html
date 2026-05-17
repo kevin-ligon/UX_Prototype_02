@@ -40,24 +40,50 @@
         }
 
         /* ================================================================
-           MAP CANVAS — aspect-locked wrapper (2436 × 1125 = ~2.165:1)
-           Labels positioned in % map directly to the image's pixel space.
-           Image and labels scale together; no drift on resize.
+           MAP CANVAS — aspect-locked wrapper (2577 × 1245 = ~2.07:1)
+           Hosts a transformable .map-content inside (zoomable/pannable)
+           plus fixed-size HUD that doesn't scale with zoom.
            ================================================================ */
+        :root {
+            /* Single shared tint strength (0..1) — applies the same opacity
+               to all active islands. Per-category color vars below let each
+               game-mode have its own hue, mirroring the stroke system. */
+            --tint-strength: 0;
+            --tint-empire:     #5cf2ff;
+            --tint-pve:        #a06bff;
+            --tint-expedition: #ff8a3d;
+            --tint-mines:      #ffc14d;
+            --tint-isle:       #9999cc;
+            --tint-pvp:        #ff5cdf;
+            --stroke-filter: none;
+        }
+
         .map-canvas {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            aspect-ratio: 2436 / 1125;
+            aspect-ratio: 2577 / 1245;
             width: 100%;
             max-height: 100%;
             max-width: 100%;
         }
 
-        @media (min-aspect-ratio: 2436/1125) {
+        @media (min-aspect-ratio: 2577/1245) {
             .map-canvas { width: auto; height: 100%; }
         }
+
+        /* The transformable layer — bg + islands + labels + tap-regions + props.
+           HUD elements are siblings of this and stay fixed to the canvas. */
+        .map-content {
+            position: absolute;
+            inset: 0;
+            transform-origin: 50% 50%;
+            will-change: transform;
+            cursor: grab;
+            touch-action: none;
+        }
+        .map-content.is-panning { cursor: grabbing; }
 
         .map-background {
             position: absolute;
@@ -68,34 +94,80 @@
             display: block;
             user-select: none;
             -webkit-user-drag: none;
-            transition: opacity 0.7s ease, transform 0.7s ease;
-            transform-origin: 30% 50%; /* zoom toward Empire */
+            pointer-events: none;
         }
 
-        /* Zoom-out view (default) — visible at start */
-        .bg-zoom-out { opacity: 1; transform: scale(1); }
-        .bg-zoom-in  {
+        /* ---- Layered island sprites (v3) ---- */
+        .wm-islands { position: absolute; inset: 0; pointer-events: none; }
+        .wm-island {
+            position: absolute;
+            pointer-events: none;
+            isolation: isolate;
+            /* Sit above .tap-region (z:15) so the island image (which carries
+               the click handler in v3.js) wins any stacking conflict with the
+               Empire tap rectangle. Sibling .wm-island elements still stack
+               by DOM order (Ravagers added after Empire → paints on top). */
+            z-index: 18;
+        }
+        .wm-island img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            pointer-events: auto;
+            -webkit-user-drag: none;
+            user-select: none;
+            transition: opacity 0.25s ease, filter 0.25s ease;
+        }
+        .wm-island .wm-disabled { opacity: 1; }
+        .wm-island .wm-active   { opacity: 0; }
+        .wm-island.is-active .wm-disabled { opacity: 0; }
+        .wm-island.is-active .wm-active   { opacity: 1; }
+        /* Per-category stroke filters are applied in world-map-v3.js based on
+           the cat-X class on the .wm-island wrapper. */
+
+        .wm-tint {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            /* Hidden by default; per-category .is-active rules below pick the
+               color and bring opacity up to --tint-strength. This is what
+               makes the tint "active-only" — disabled islands stay neutral. */
+            background-color: transparent;
             opacity: 0;
-            transform: scale(0.7);
-            /* The zoomed-in art renders slightly darker than the zoomed-out
-               version — boost brightness/saturation so the colored-stroke
-               islands (Empire green, Expedition cyan, Ravagers purple, etc.)
-               match the vibrancy of their world-map counterparts. */
-            filter: brightness(1.15) saturate(1.2);
+            -webkit-mask-size: 100% 100%;
+                    mask-size: 100% 100%;
+            -webkit-mask-repeat: no-repeat;
+                    mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+                    mask-position: center;
+            mix-blend-mode: multiply;
+            will-change: opacity, background-color;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
         }
 
-        /* When zoomed in, swap the layers */
-        .map-canvas[data-zoom="in"] .bg-zoom-out { opacity: 0; transform: scale(1.5); }
-        .map-canvas[data-zoom="in"] .bg-zoom-in  { opacity: 1; transform: scale(1); }
+        /* Per-category active-only tints. Both .is-active AND .cat-X must
+           be present, matching the stroke selector pattern. The category
+           color comes from a shared CSS var so a single setProperty()
+           recolors every island in that category. */
+        .wm-island.is-active.cat-empire     .wm-tint { background-color: var(--tint-empire);     opacity: var(--tint-strength); }
+        .wm-island.is-active.cat-pve        .wm-tint { background-color: var(--tint-pve);        opacity: var(--tint-strength); }
+        .wm-island.is-active.cat-expedition .wm-tint { background-color: var(--tint-expedition); opacity: var(--tint-strength); }
+        .wm-island.is-active.cat-mines      .wm-tint { background-color: var(--tint-mines);      opacity: var(--tint-strength); }
+        .wm-island.is-active.cat-isle       .wm-tint { background-color: var(--tint-isle);       opacity: var(--tint-strength); }
+        .wm-island.is-active.cat-pvp        .wm-tint { background-color: var(--tint-pvp);        opacity: var(--tint-strength); }
 
-        /* Hide zoom-out labels/regions when zoomed in */
+        /* The original world-map layered hand-crafted props on top of an
+           Empire-zoomed background and only revealed them when [data-zoom]
+           was "in". With v3's continuous wheel zoom, world-map-v3.js sets
+           data-zoom="in" once the user crosses ~1.6×, so these selectors
+           still gate the props correctly. */
         .map-canvas[data-zoom="in"] .label[data-zoom="out"],
         .map-canvas[data-zoom="in"] .tap-region[data-zoom="out"] {
             opacity: 0;
             pointer-events: none;
         }
-
-        /* Hide zoom-in labels/regions when zoomed out */
         .map-canvas[data-zoom="out"] .label[data-zoom="in"],
         .map-canvas[data-zoom="out"] .tap-region[data-zoom="in"] {
             opacity: 0;
@@ -105,6 +177,9 @@
         .label, .tap-region {
             transition: opacity 0.5s ease;
         }
+
+        /* SVG filter host — kept off-screen but in the DOM */
+        .wm-svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
         /* ================================================================
            ISLAND LABELS — anchored to detected outline centers
@@ -128,18 +203,19 @@
             z-index: 10;
         }
 
-        /* Centers detected via outline-color analysis of the background */
-        .label-empire       { left: 36.7%; top: 49.2%; }
-        .label-expedition   { left: 61.9%; top: 47.9%; }
-        .label-ravagers     { left: 50.0%; top: 27.4%; }
-        .label-pve          { left: 58.7%; top: 16.4%; }
-        .label-mines-1      { left:  6.9%; top: 61.3%; }
-        .label-mines-2      { left: 27.3%; top: 81.4%; }
-        .label-mines-3      { left: 83.0%; top: 30.4%; }
-        .label-mines-4      { left: 75.5%; top: 77.9%; }
-        .label-pvp-1        { left: 23.3%; top: 30.1%; }
-        .label-pvp-2        { left: 51.3%; top: 67.0%; }
-        .label-pvp-3        { left: 55.3%; top: 83.9%; }
+        /* Centers retuned for the 2577×1245 disabled bg (v3 layered map).
+           Each value is the bbox center of the corresponding island PNG. */
+        .label-empire       { left: 36.3%; top: 48.4%; }
+        .label-expedition   { left: 60.8%; top: 47.1%; }
+        .label-ravagers     { left: 46.3%; top: 32.1%; }
+        .label-pve          { left: 57.7%; top: 18.1%; }
+        .label-mines-1      { left:  7.5%; top: 59.7%; }
+        .label-mines-2      { left: 27.2%; top: 78.2%; }
+        .label-mines-3      { left: 81.1%; top: 31.0%; }
+        .label-mines-4      { left: 73.8%; top: 74.7%; }
+        .label-pvp-1        { left: 23.5%; top: 31.2%; }
+        .label-pvp-2        { left: 50.2%; top: 66.3%; }
+        .label-pvp-3        { left: 54.5%; top: 82.7%; }
 
         /* ================================================================
            HUD ELEMENTS — positioned relative to the map canvas
@@ -391,30 +467,36 @@
             transition-duration: 70ms;
         }
 
-        /* Empire bbox in zoom-out view: (591,321)-(1196,787) in 2436x1125 space */
+        /* Empire tap region — shrunk on the right so it no longer overlaps
+           Ravagers' Reef (which sits at x=42–50.5%, tower at 46.3%). The
+           Empire tap-region is z-index 15 and the Reef tower prop is z-index
+           12, so any overlap here would steal Reef clicks. Capital City prop
+           is at left:36.3%, so a 40% right edge keeps the whole Empire island
+           covered with a ~2% buffer before Ravagers' Reef starts. */
         .tap-empire {
-            left: 24.3%;
-            top: 28.5%;
-            width: 24.8%;
-            height: 41.4%;
+            left: 24.4%;
+            top: 29.5%;
+            width: 15.6%;   /* right edge = 40% (was 23.8% → 48.2%) */
+            height: 37.8%;
         }
 
-        /* Empire bbox in zoom-in view: large green island, occupies left-center */
+        /* In v3 the same region is the tap target at any zoom — no separate
+           pre-zoomed art layer to align against. */
         .tap-empire-zoomed {
-            left: 8%;
-            top: 12%;
-            width: 42%;
-            height: 80%;
+            left: 24.4%;
+            top: 29.5%;
+            width: 15.6%;   /* matches .tap-empire — see note above */
+            height: 37.8%;
         }
 
-        /* === Zoom-in label positions === */
-        /* EMPIRE label sits BELOW the Capital City label, both stacked */
-        .label-empire-z      { left: calc(32% - 20px); top: calc(50% + 20px); }
-        .label-ravagers-z    { left: calc(53% - 50px); top: calc(38% - 20px); }
-        .label-expedition-z  { left: calc(80% - 40px); top: calc(65% - 30px); }
-        /* PVE island is mostly off-screen in the zoom-in view — hide its label
-           to avoid the dark pill overlapping the inventory bar in the corner */
-        .label-pve-z         { display: none; }
+        /* === Zoom-in label positions ===
+           Sit on top of the same islands as the zoom-out labels. They were
+           previously offset for the hand-drawn close-up bg; v3 uses the same
+           bg at all zoom levels so the offsets are no longer needed. */
+        .label-empire-z      { left: 36.3%; top: 53%; }
+        .label-ravagers-z    { left: 46.3%; top: 28%; }
+        .label-expedition-z  { left: 60.8%; top: 51%; }
+        .label-pve-z         { left: 57.7%; top: 14%; }
 
         /* === Zoom-in island UI: structures, monsters, badges === */
         .map-prop {
@@ -452,10 +534,11 @@
             user-select: none;
         }
 
-        /* Capital City structure (Empire) — sits on the mountain peak */
+        /* Capital City structure — sits on Empire's central plateau on the
+           full disabled bg (no longer overlaying a separate close-up image). */
         .prop-capital-city {
-            left: calc(32% - 30px);
-            top: 28%;
+            left: 36.3%;
+            top: 47%;
             width: clamp(70px, 9vw, 130px);
         }
 
@@ -464,8 +547,8 @@
             width: clamp(40px, 5vw, 75px);
         }
 
-        .prop-tower-ravagers   { left: calc(53% - 50px); top: 18%; }
-        .prop-tower-expedition { left: calc(80% - 40px); top: calc(50% - 20px); }
+        .prop-tower-ravagers   { left: 46.3%; top: 32%; }
+        .prop-tower-expedition { left: 60.8%; top: 47%; }
 
         /* Roaming monsters on Empire — pulsing red battle indicators */
         .prop-monster {
@@ -497,17 +580,18 @@
             }
         }
 
-        /* Stagger the animation so all 4 don't pulse in sync — feels more alive */
-        .monster-1 { left: 14%; top: 58%; }
+        /* Four monsters scattered around Empire's perimeter on the new bg.
+           Stagger animation so they don't pulse in sync — feels more alive. */
+        .monster-1 { left: 28%; top: 38%; }
         .monster-1 img { animation-delay: 0s; }
 
-        .monster-2 { left: 28%; top: 75%; }
+        .monster-2 { left: 30%; top: 58%; }
         .monster-2 img { animation-delay: 0.6s; }
 
-        .monster-3 { left: 35%; top: 48%; }
+        .monster-3 { left: 43%; top: 41%; }
         .monster-3 img { animation-delay: 1.2s; }
 
-        .monster-4 { left: 42%; top: 72%; }
+        .monster-4 { left: 42%; top: 60%; }
         .monster-4 img { animation-delay: 1.8s; }
 
         /* Pause animation when zoomed out (no point burning frames) */
@@ -546,14 +630,14 @@
             white-space: nowrap;
         }
 
-        .badge-ravagers   { left: calc(53% - 50px); top: 25%; }
-        .badge-expedition { left: calc(80% - 40px); top: calc(56% - 20px); }
+        .badge-ravagers   { left: 46.3%; top: 39%; }
+        .badge-expedition { left: 60.8%; top: 55%; }
 
-        /* Capital City label — sits ABOVE the EMPIRE label (stacked) */
+        /* Capital City label — sits ABOVE the Capital City prop. */
         .capital-city-label {
             position: absolute;
-            left: calc(32% - 30px);
-            top: calc(44% - 70px);
+            left: 36.3%;
+            top: 41%;
             transform: translate(-50%, -50%);
             font-size: clamp(11px, 1.1vw, 16px);
             font-weight: 700;
@@ -565,12 +649,11 @@
             pointer-events: none;
         }
 
-        /* Banner row above Capital City — boss/dungeon/fuel banners with notification pips
-           Positioned so their drop shadows slightly overlap the dome at the top of the castle */
+        /* Banner row above Capital City — boss/dungeon/fuel banners with notification pips */
         .banner-row {
             position: absolute;
-            left: calc(32% - 30px);
-            top: 21%;
+            left: 36.3%;
+            top: 35%;
             transform: translate(-50%, -50%);
             display: flex;
             gap: clamp(6px, 0.6vw, 10px);
@@ -619,14 +702,14 @@
             filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
         }
 
-        .tower-banner-ravagers   { left: calc(53% - 50px); top: calc(13% - 10px); }
-        .tower-banner-expedition { left: calc(80% - 40px); top: calc(43% - 20px); }
+        .tower-banner-ravagers   { left: 46.3%; top: 25.5%; }
+        .tower-banner-expedition { left: 60.8%; top: 41%; }
 
-        /* Floating "!" alert badge (far right) */
+        /* Floating "!" alert badge — anchored above the PvE island. */
         .alert-pip {
             position: absolute;
-            left: 96%;
-            top: 25%;
+            left: 62%;
+            top: 12%;
             transform: translate(-50%, -50%);
             width: clamp(20px, 2vw, 30px);
             height: clamp(20px, 2vw, 30px);
@@ -709,6 +792,31 @@
         .zoom-btn.active {
             background: linear-gradient(135deg, #dd5be5, #9d2ba5);
             box-shadow: 0 0 16px rgba(221, 91, 229, 0.8);
+        }
+
+        /* Live zoom readout — sits between the - and + buttons. */
+        .zoom-level {
+            min-width: clamp(60px, 5.5vw, 80px);
+            height: clamp(40px, 4vw, 56px);
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(26, 15, 46, 0.9);
+            border: 2px solid rgba(221, 91, 229, 0.6);
+            border-radius: 24px;
+            color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: clamp(14px, 1.3vw, 18px);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.5px;
+            user-select: none;
+        }
+        /* Light up red when current zoom is at the configured ceiling so the
+           user can tell whether the map is "stuck" because of the max-zoom
+           setting in the debug panel. */
+        .zoom-level.at-max {
+            color: #ff8a8a;
+            border-color: #ff8a8a;
+            box-shadow: 0 0 10px rgba(255, 138, 138, 0.5);
         }
 
         /* ================================================================
@@ -2513,8 +2621,11 @@
     <div class="stage">
         <!-- Aspect-locked map canvas: image + labels stay aligned at any size -->
         <div class="map-canvas" id="mapCanvas" data-zoom="out">
-            <img src="../assets/backgrounds/World Map Zoom Out.png" alt="World Map - Zoomed Out" class="map-background bg-zoom-out">
-            <img src="../assets/backgrounds/World Map Zoom In.png" alt="World Map - Zoomed In" class="map-background bg-zoom-in">
+          <!-- ZOOMABLE / PANNABLE LAYER — bg + islands + labels + tap-regions + props.
+               world-map-v3.js applies transform: translate(...) scale(zoom) to this. -->
+          <div class="map-content" id="mapContent">
+            <img src="../assets/backgrounds/World-Map-Disabled.png" alt="World Map" class="map-background" id="wmBg">
+            <div class="wm-islands" id="wmIslands"></div>
 
             <!-- ISLAND TAP REGIONS — ZOOM OUT VIEW -->
             <button class="tap-region tap-empire" data-zoom="out" onclick="openPopup('empire', this)" aria-label="Open Empire popup"></button>
@@ -2541,73 +2652,14 @@
             <div class="label label-expedition-z" data-zoom="in">EXPEDITION</div>
             <div class="label label-pve-z" data-zoom="in">PVE</div>
 
-            <!-- ZOOM-IN ISLAND DETAILS -->
+            <!-- ZOOM-IN ISLAND DETAILS — built dynamically per-island by
+                 world-map-v3.js. Each .wm-island wrapper gets a child .island-fx
+                 layer that contains: prop, banner, prop name, resource, island
+                 name, battle indicators, and notification badge. The Map States
+                 debug panel (M) lets you assign and tune all of these per island. -->
+          </div><!-- /.map-content -->
 
-            <!-- Empire: banners above + Capital City + label + 4 battle indicators -->
-
-            <!-- Banners above Capital City (boss / dungeon / fuel) each with appropriate badge -->
-            <div class="banner-row" data-zoom="in">
-                <div class="banner-item" data-badge-target="banner-boss" data-badge-label="Boss banner">
-                    <img src="../assets/icons/ui_map_banner_battle_boss.png" alt="Boss" class="banner-img">
-                    <span class="badge badge-alert" title="Boss expires soon">!</span>
-                </div>
-                <div class="banner-item" data-badge-target="banner-dungeon" data-badge-label="Dungeon banner">
-                    <img src="../assets/icons/ui_map_banner_battle_dungeon.png" alt="Dungeon" class="banner-img">
-                    <span class="badge badge-alert" title="Dungeon expires soon">!</span>
-                </div>
-                <div class="banner-item" data-badge-target="banner-fuel" data-badge-label="Fuel banner">
-                    <img src="../assets/icons/ui_map_banner_fuel.png" alt="Fuel" class="banner-img">
-                    <span class="badge badge-arrow" title="Fuel ready to collect">↑</span>
-                </div>
-            </div>
-
-            <div class="map-prop prop-capital-city" data-zoom="in" onclick="openPopup('empire')" title="Capital City">
-                <img src="../assets/ui-elements/map_image_capital_city.png" alt="Capital City">
-            </div>
-            <div class="capital-city-label" data-zoom="in">Capital City</div>
-
-            <!-- 4 red battle indicators scattered across Empire -->
-            <div class="map-prop prop-monster monster-1" data-zoom="in" title="Battle">
-                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
-            </div>
-            <div class="map-prop prop-monster monster-2" data-zoom="in" title="Battle">
-                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
-            </div>
-            <div class="map-prop prop-monster monster-3" data-zoom="in" title="Battle">
-                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
-            </div>
-            <div class="map-prop prop-monster monster-4" data-zoom="in" title="Battle">
-                <img src="../assets/ui-elements/Map Battle Indicator.png" alt="Battle">
-            </div>
-
-            <!-- Ravagers Reef: PVP banner above + tower with flag + score badge with energy icon -->
-            <div class="tower-banner tower-banner-ravagers" data-zoom="in">
-                <img src="../assets/icons/ui_map_pvp_banners.png" alt="PVP Banner">
-            </div>
-            <div class="map-prop prop-tower prop-tower-ravagers" data-zoom="in" title="Ravagers Reef Tower">
-                <img src="../assets/ui-elements/map_image_tower_flag.png" alt="Tower">
-            </div>
-            <div class="score-badge badge-ravagers" data-zoom="in">
-                <img src="../assets/icons/resource_energy.png" alt="" class="badge-icon">
-                <span>24/24</span>
-            </div>
-
-            <!-- Expedition: PVP banner above + tower + score badge with energy icon -->
-            <div class="tower-banner tower-banner-expedition" data-zoom="in">
-                <img src="../assets/icons/ui_map_pvp_banners.png" alt="PVP Banner">
-            </div>
-            <div class="map-prop prop-tower prop-tower-expedition" data-zoom="in" title="Expedition Tower">
-                <img src="../assets/ui-elements/map_image_tower.png" alt="Tower">
-            </div>
-            <div class="score-badge badge-expedition" data-zoom="in">
-                <img src="../assets/icons/resource_energy.png" alt="" class="badge-icon">
-                <span>24/24</span>
-            </div>
-
-            <!-- Far-right alert pip -->
-            <div class="alert-pip" data-zoom="in">
-                <img src="../assets/ui-elements/Notification Pip Large.png" alt="Alert">
-            </div>
+          <!-- ============ HUD (fixed-size, doesn't scale with zoom) ============ -->
 
             <!-- TOP-LEFT: PLAYER PROFILE -->
             <div class="player-profile">
@@ -2673,6 +2725,7 @@
             <!-- ZOOM CONTROLS -->
             <div class="zoom-controls">
                 <button class="zoom-btn" id="zoomOutBtn" title="Zoom out (or scroll up)">−</button>
+                <span class="zoom-level" id="zoomLevel" title="Current zoom (use Map States debug to set max)">1.0×</span>
                 <button class="zoom-btn" id="zoomInBtn" title="Zoom in (or scroll down)">+</button>
             </div>
         </div>
@@ -2899,6 +2952,250 @@
                             </span>
                         </div>
                         <button class="popup-btn nslice-btn-cyan" data-cost='{"gold": 1500}'>
+                            <span class="popup-btn-label">Enter</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         POPUP: RAVAGERS' REEF (PvP leaderboard island)
+         Opened by tapping the Ravagers' Reef tower on the world map
+         (wired in world-map-v3.js → openPopup('pvp-ravagers')).
+         Shows the player's leaderboard slot (rank 5, highlighted) flanked
+         by the rank above (4) and below (6), 4 potential reward cards,
+         and a cost capsule + ENTER action.
+         ================================================================ -->
+    <style>
+        /* ----- Popup sizing -----
+           Aspect-ratio is taller than feature-quest (621/690 → 621/828) so
+           the leaderboard section + rewards + ENTER all fit comfortably with
+           visible frame chrome below the action button. The 828 denominator
+           is +48 over the previous 780 to extend the background further down
+           below the ENTER button (matches the value at 620px width). */
+        #popup-pvp-ravagers .popup {
+            width: min(620px, 90vw);
+            aspect-ratio: 621 / 828;
+        }
+
+        /* Mirror the Empire popup's close-button placement so the X sits in
+           the same spot relative to the frame ornaments (instead of the
+           default tucked-into-corner position). Numbers come from
+           #popup-empire .popup-close. */
+        #popup-pvp-ravagers .popup-close {
+            top:   calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
+            right: calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
+        }
+
+        /* Push the inner content area's bottom inset in so the ENTER button
+           lifts off the frame edge — leaves visible popup background below
+           the action, matching the Empire popup feel. */
+        #popup-pvp-ravagers .feature-popup-inner {
+            inset: 5% 6% 12% 6%;
+        }
+
+        /* ----- Header row: territory title + players-count pill ----- */
+        #popup-pvp-ravagers .reef-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        #popup-pvp-ravagers .reef-players-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(18px, 2vw, 26px);
+            color: #ffffff;
+            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
+            /* Drop the count down so its baseline lines up with the
+               "Leaderboard" section label one row below. transform leaves
+               the title row's flex layout intact. */
+            transform: translateY(48px);
+        }
+        #popup-pvp-ravagers .reef-players-count img {
+            width: clamp(20px, 2vw, 28px);
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+        }
+
+        /* ----- Leaderboard rows ----- */
+        #popup-pvp-ravagers .reef-leaderboard {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #popup-pvp-ravagers .reef-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 14px;
+            min-height: clamp(36px, 4vw, 48px);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-style: italic;
+            color: #b2b2b2;
+            text-transform: uppercase;
+        }
+        #popup-pvp-ravagers .reef-row .reef-rank {
+            min-width: 28px;
+            font-size: clamp(16px, 1.7vw, 22px);
+        }
+        #popup-pvp-ravagers .reef-row .reef-name {
+            flex: 1;
+            font-size: clamp(16px, 1.7vw, 22px);
+            letter-spacing: 0.5px;
+        }
+        #popup-pvp-ravagers .reef-row .reef-trophy {
+            width: clamp(18px, 1.8vw, 24px);
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+        }
+        #popup-pvp-ravagers .reef-row .reef-score {
+            font-size: clamp(16px, 1.7vw, 22px);
+            color: #fffbe4;
+        }
+
+        /* Highlighted (current player) row — bolder, white text, cyan trim.
+           The 9-slice border-image draws frame_highlight.png around the row;
+           override wins against the .nslice-bg-stat utility on the same node
+           because of higher specificity (#popup id + .is-player class). */
+        #popup-pvp-ravagers .reef-row.is-player {
+            color: #ffffff;
+            padding: 10px 14px;
+            min-height: clamp(48px, 5.5vw, 64px);
+            border-style: solid;
+            border-width: 14px 22px;
+            border-image-source: url('../assets/ui-elements/frame_highlight.png');
+            border-image-slice: 30 40 fill;
+            border-image-repeat: stretch;
+            background: transparent;
+        }
+        #popup-pvp-ravagers .reef-row.is-player .reef-rank,
+        #popup-pvp-ravagers .reef-row.is-player .reef-name,
+        #popup-pvp-ravagers .reef-row.is-player .reef-score {
+            font-size: clamp(20px, 2.2vw, 28px);
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        #popup-pvp-ravagers .reef-row.is-player .reef-score {
+            color: #fffbe4;
+        }
+        #popup-pvp-ravagers .reef-row.is-player .reef-stat-arrow {
+            width: clamp(20px, 2vw, 26px);
+            height: auto;
+            object-fit: contain;
+        }
+    </style>
+
+    <div class="popup-overlay" id="popup-pvp-ravagers" onclick="if(event.target===this)closePopup()">
+        <div class="popup nslice-popup-dark">
+            <button class="popup-close" onclick="closePopup()" aria-label="Close">
+                <img src="../assets/buttons/ui_btn_close.png" alt="">
+            </button>
+
+            <div class="feature-popup-inner">
+                <!-- Title row: Ravagers' Reef + total players in event -->
+                <div class="reef-title-row">
+                    <h2 class="feature-popup-title">RAVAGERS' REEF</h2>
+                    <span class="reef-players-count" aria-label="12 players competing">
+                        <img src="../assets/ui-elements/Map%20Icon%20Players.png" alt="">
+                        <span>12</span>
+                    </span>
+                </div>
+
+                <!-- Leaderboard section — player slot (rank 5) flanked by rank 4 and 6 -->
+                <section class="feature-section">
+                    <span class="feature-section-label">Leaderboard</span>
+                    <div class="reef-leaderboard nslice-bg-list" style="padding: 8px;">
+                        <div class="reef-row">
+                            <span class="reef-rank">4.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">45</span>
+                        </div>
+                        <div class="reef-row is-player nslice-bg-stat">
+                            <span class="reef-rank">5.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">50</span>
+                            <img class="reef-stat-arrow" src="../assets/icons/ui_icon_stat_increase.png" alt="">
+                        </div>
+                        <div class="reef-row">
+                            <span class="reef-rank">6.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">55</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Potential rewards (4 cards in wireframe) -->
+                <section class="feature-section">
+                    <span class="feature-section-label">Potential Rewards</span>
+                    <div class="reward-strip">
+                        <div class="reward-grid">
+                            <div class="reward-card" data-rarity="uncommon">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_fuel.png" alt="Fuel">
+                                <div class="reward-bonus-strip">
+                                    <span class="reward-bonus">+100k</span>
+                                </div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_gold.png" alt="Gold">
+                                <div class="reward-bonus-strip">
+                                    <span class="reward-bonus">+100k</span>
+                                </div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_steel.png" alt="Steel">
+                                <div class="reward-bonus-strip">
+                                    <span class="reward-bonus">+100k</span>
+                                </div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="epic">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_meteorite.png" alt="Meteorite">
+                                <div class="reward-bonus-strip">
+                                    <span class="reward-bonus">+100k</span>
+                                </div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ENTER action: cost capsule above, cyan secondary button below.
+                     Wireframe shows green; project convention reserves green for
+                     Battle / Level Up / Upgrade only — using cyan to match the
+                     existing PVE feature-quest popup. Swap to .btn-green-primary
+                     if the team confirms Reef entry should be a Battle action. -->
+                <div class="popup-actions" style="margin-top: auto;">
+                    <div class="popup-action">
+                        <div class="cost-capsule nslice-bg-list">
+                            <!-- Cost = 1 energy (battery). data-cost binds to "fuel"
+                                 because that's the primary HUD pill that uses the
+                                 same resource_energy.png icon, so the deduction is
+                                 visible in the player's resource bar on ENTER. -->
+                            <span class="cost-item" data-cost-resource="fuel" data-cost-amount="1">
+                                <img src="../assets/icons/resource_energy.png" alt="" class="cost-icon">
+                                <span class="cost-amount">1</span>
+                            </span>
+                        </div>
+                        <button class="popup-btn nslice-btn-cyan" data-cost='{"fuel": 1}'
+                                onclick="closePopup(); window.location.href='ravagers-reef-map.html';">
                             <span class="popup-btn-label">Enter</span>
                         </button>
                     </div>
@@ -3336,47 +3633,11 @@
             // Future: route per id, e.g. id==='m4' → focus a monster island.
         }
 
-        // ===== Zoom =====
-        const mapCanvas = document.getElementById('mapCanvas');
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-
-        function setZoom(level) {
-            // level: "in" or "out"
-            mapCanvas.dataset.zoom = level;
-            zoomInBtn.classList.toggle('active', level === 'in');
-            zoomOutBtn.classList.toggle('active', level === 'out');
-        }
-
-        zoomInBtn.addEventListener('click', () => setZoom('in'));
-        zoomOutBtn.addEventListener('click', () => setZoom('out'));
-
-        // ===== Mouse wheel zoom (debounced) =====
-        let wheelLock = false;
-        const stage = document.querySelector('.stage');
-        stage.addEventListener('wheel', (e) => {
-            // Don't intercept scroll inside an open popup
-            if (document.querySelector('.popup-overlay.open')) return;
-            e.preventDefault();
-            if (wheelLock) return;
-            wheelLock = true;
-            setTimeout(() => { wheelLock = false; }, 600);
-
-            // Scroll DOWN (positive deltaY) = zoom IN
-            // Scroll UP (negative deltaY) = zoom OUT
-            if (e.deltaY > 0) setZoom('in');
-            else setZoom('out');
-        }, { passive: false });
-
-        // ===== Keyboard =====
+        // ===== Zoom — handled by world-map-v3.js (continuous wheel + drag-pan).
+        // Keep the Escape→closePopup binding here so the popup module owns it.
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closePopup();
-            if (e.key === '+' || e.key === '=') setZoom('in');
-            if (e.key === '-' || e.key === '_') setZoom('out');
         });
-
-        // Initialize button state
-        setZoom('out');
 
         // ===== Tap ripple — visual feedback on island taps =====
         // Adds a brief expanding white pulse at the click point on any
@@ -4455,5 +4716,109 @@
     <script src="debug-panel.js"></script>
     <!-- UI Inspector: grid, spacing, tap-target, click-to-inspect (press U) -->
     <script src="ui-inspector.js"></script>
+
+    <!-- ================================================================
+         WORLD MAP v3 — layered islands + continuous zoom/pan
+         + Map States debug panel (🗺️ button bottom-right or press M)
+         ================================================================ -->
+    <svg class="wm-svg-defs" aria-hidden="true">
+      <defs>
+        <filter id="wmStroke" x="-20%" y="-20%" width="140%" height="140%">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="0" result="dilated" />
+          <feFlood flood-color="#5cf2ff" result="color" />
+          <feComposite in="color" in2="dilated" operator="in" result="stroke" />
+          <feMerge>
+            <feMergeNode in="stroke" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
+    <!-- Cache-buster (?v=...) — bump the number whenever you change the file
+         to force the browser to fetch the new version instead of a stale copy. -->
+    <script src="map-states-debug.js?v=21"></script>
+    <script src="world-map-v3.js?v=21"></script>
+
+    <!-- ============================================================
+         URL-param dispatcher
+         Lets other pages (the reef map's HUD buttons) deep-link back
+         here and open a specific menu / panel. Runs after all scripts
+         load so Menu / Army / Summon are guaranteed to exist.
+         Supported:
+           ?menu=<fullscreen-menu>   (empire-summary, buildings, offers, store, …)
+           ?action=army | summon | conquest
+         (The existing ?focus=<island-key> handler lives inside v3.js.)
+         ============================================================ -->
+    <script>
+      (function () {
+        // Wait one frame so v3.js's worldmap:ready completes first —
+        // avoids a race where the menus open before the map is set up.
+        requestAnimationFrame(() => {
+          const params = new URLSearchParams(window.location.search);
+          const menu = params.get('menu');
+          const action = params.get('action');
+          if (menu && window.Menu && typeof Menu.open === 'function') {
+            Menu.open(menu);
+          }
+          if (action === 'army' && window.Army && typeof Army.openCollection === 'function') {
+            Army.openCollection();
+          }
+          if (action === 'summon' && window.Summon && typeof Summon.openMenu === 'function') {
+            Summon.openMenu();
+          }
+          if (action === 'conquest' && typeof openConquestGuide === 'function') {
+            openConquestGuide();
+          }
+        });
+      })();
+    </script>
+
+    <!-- ============================================================
+         Universal Back handler
+         Any visible back/close button — fullscreen menu back, conquest
+         drawer close, popup close — checks sessionStorage 'menu-origin'.
+         If set, the user arrived here from another page (e.g. the reef
+         map) to open a menu, so navigate back to that origin instead of
+         just closing the menu inline. Otherwise the existing inline
+         close handlers run normally.
+         Capture phase + stopPropagation beats menus.js's own listener.
+         ============================================================ -->
+    <script>
+      (function () {
+        const BACK_SELECTORS = [
+          '.menu-back',         // fullscreen menu back arrow
+          '[data-menu-close]',  // any explicit menu-close button
+          '.conquest-close',    // conquest guide drawer close X
+          '.popup-close',       // popup close X (catches the case where
+                                // a deep-linked menu opens a popup inside)
+        ].join(', ');
+
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest(BACK_SELECTORS);
+          if (!btn) return;
+          const origin = sessionStorage.getItem('menu-origin');
+          if (!origin) return;          // no cross-page nav — let default close run
+          sessionStorage.removeItem('menu-origin');
+          e.preventDefault();
+          e.stopPropagation();          // block the inline-close handler
+          window.location.href = origin;
+        }, true);                        // capture phase: runs before menus.js
+
+        // Esc-to-close should ALSO return to origin when one is set.
+        document.addEventListener('keydown', (e) => {
+          if (e.key !== 'Escape') return;
+          const origin = sessionStorage.getItem('menu-origin');
+          if (!origin) return;
+          // Only hijack Esc if a menu / popup is actually open — otherwise
+          // we'd steal Esc from other UI (debug panels, inputs, etc.).
+          const hasOpen = document.querySelector('.fullscreen-menu.open, .popup-overlay.open, .conquest-overlay.open');
+          if (!hasOpen) return;
+          sessionStorage.removeItem('menu-origin');
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = origin;
+        }, true);
+      })();
+    </script>
 </body>
 </html>

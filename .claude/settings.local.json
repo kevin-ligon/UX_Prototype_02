@@ -25,7 +25,15 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(curl *)",
-      "mcp__figma__get_metadata"
+      "mcp__figma__get_metadata",
+      "Bash(python3 -m http.server 8765 --directory .)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(kill 1318)",
+      "Bash(jobs -l)",
+      "Bash(pkill -f \"Google Chrome\")",
+      "Bash(pkill -f \"http.server\")",
+      "Skill(crop-icons)",
+      "Skill(update-config)"
     ]
   }
 }

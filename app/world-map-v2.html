@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Map v2 — Layered Islands</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-color: #0a0614;
+      --tint-color: #ff5b8a;
+      --tint-strength: 0;            /* 0–1 */
+      --stroke-color: #5cf2ff;
+      --stroke-width: 0;             /* px (in canvas-pixel space) */
+      --pan-transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html, body { width: 100%; height: 100%; }
+
+    body {
+      font-family: 'Barlow Condensed', sans-serif;
+      background: var(--bg-color);
+      overflow: hidden;
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+
+    /* ============================================================
+       STAGE — fills the viewport, holds the zoom/pan transform.
+       The CANVAS inside has the natural aspect ratio of the bg.
+       Islands are positioned in % so they scale with the canvas.
+       ============================================================ */
+    .wm-stage {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      cursor: grab;
+    }
+    .wm-stage.is-panning { cursor: grabbing; }
+
+    .wm-canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      aspect-ratio: 2577 / 1245;
+      width: 100%;
+      max-height: 100%;
+      transform: translate(-50%, -50%);
+      transform-origin: 50% 50%;
+      transition: var(--pan-transition);
+      will-change: transform;
+      user-select: none;
+    }
+    /* When viewport is wider than the map ratio, anchor by height. */
+    @media (min-aspect-ratio: 2577/1245) {
+      .wm-canvas { width: auto; height: 100%; }
+    }
+
+    .wm-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      -webkit-user-drag: none;
+      user-select: none;
+    }
+
+    /* ============================================================
+       ISLAND LAYERS
+       Each island sits in its own absolutely-positioned wrapper.
+       isolation:isolate creates a blend-mode boundary so the tint's
+       multiply only multiplies with this island's sprites — not the
+       background, not other islands.
+       ============================================================ */
+    .wm-island {
+      position: absolute;
+      pointer-events: none;
+      isolation: isolate;
+    }
+
+    .wm-island img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      pointer-events: auto;
+      -webkit-user-drag: none;
+      user-select: none;
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+
+    .wm-island .wm-disabled { opacity: 1; }
+    .wm-island .wm-active   { opacity: 0; }
+
+    .wm-island.is-active .wm-disabled { opacity: 0; }
+    .wm-island.is-active .wm-active   { opacity: 1; }
+
+    /* Stroke applied only to active islands via SVG filter. */
+    .wm-island.is-active .wm-active {
+      filter: var(--stroke-filter, none);
+    }
+
+    /* Tint overlay — sits on TOP of both sprites and uses the island
+       PNG as a mask so the color is shaped to the island silhouette.
+       mix-blend-mode: multiply darkens the underlying pixels with the
+       chosen color — preserving shadow / highlight detail rather than
+       painting a flat fill. */
+    .wm-tint {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-color: var(--tint-color);
+      opacity: var(--tint-strength);
+      -webkit-mask-size: 100% 100%;
+              mask-size: 100% 100%;
+      -webkit-mask-repeat: no-repeat;
+              mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+              mask-position: center;
+      mix-blend-mode: multiply;
+      will-change: opacity, background-color;
+      transition: opacity 0.2s ease, background-color 0.2s ease;
+    }
+
+    /* ============================================================
+       HUD CONTROLS — zoom + reset + island counter
+       ============================================================ */
+    .wm-hud {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 50;
+    }
+    .wm-hud-btn {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 9px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: background 0.15s ease, transform 0.07s ease;
+    }
+    .wm-hud-btn:hover { background: rgba(20, 30, 60, 0.85); }
+    .wm-hud-btn:active { transform: scale(0.96); }
+    .wm-hud-btn.is-on  { background: #2a8aff; border-color: #5cf2ff; }
+
+    .wm-help {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.55);
+      padding: 8px 12px;
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    /* ============================================================
+       SVG FILTER HOST — kept off-screen but in DOM
+       ============================================================ */
+    .wm-svg-defs {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+  </style>
+
+  <link rel="stylesheet" href="debug-panel.css" />
+</head>
+<body>
+
+  <div class="wm-stage" id="wmStage">
+    <div class="wm-canvas" id="wmCanvas" data-zoom="out">
+      <!-- Disabled background sits at the bottom; islands paint on top -->
+      <img class="wm-bg" id="wmBg"
+           src="../assets/backgrounds/World-Map-Disabled.png"
+           alt="World map (disabled state)" />
+      <div class="wm-islands" id="wmIslands"></div>
+    </div>
+  </div>
+
+  <div class="wm-help">Scroll to zoom · Drag to pan · Tap an island to toggle · M for debug</div>
+
+  <div class="wm-hud">
+    <button class="wm-hud-btn" id="btnZoom">Zoom in</button>
+    <button class="wm-hud-btn" id="btnRecenter">Recenter</button>
+    <button class="wm-hud-btn" id="btnAllActive">All active</button>
+    <button class="wm-hud-btn" id="btnAllOff">All off</button>
+  </div>
+
+  <!-- Off-screen SVG holding the dilate/stroke filter -->
+  <svg class="wm-svg-defs" aria-hidden="true">
+    <defs>
+      <filter id="wmStroke" x="-20%" y="-20%" width="140%" height="140%">
+        <feMorphology in="SourceAlpha" operator="dilate" radius="0" result="dilated" />
+        <feFlood flood-color="#5cf2ff" result="color" />
+        <feComposite in="color" in2="dilated" operator="in" result="stroke" />
+        <feMerge>
+          <feMergeNode in="stroke" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="map-states-debug.js"></script>
+  <script src="world-map-v2.js"></script>
+</body>
+</html>

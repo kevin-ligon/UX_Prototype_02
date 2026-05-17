@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravagers' Reef Map</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <!-- Project utility styles reused 1:1 -->
+    <link rel="stylesheet" href="9slice.css">
+    <link rel="stylesheet" href="badges.css">
+    <link rel="stylesheet" href="menus.css">
+    <!-- debug-panel.css styles BOTH the Notification debug panel (🐞 / D)
+         and the Map States debug panel (🗺️ / M) — they share .debug-toggle
+         and .debug-panel classes. Without this link the toggle buttons are
+         invisible / unstyled and the panel can't render. -->
+    <link rel="stylesheet" href="debug-panel.css">
+    <link rel="stylesheet" href="tap-feedback.css">
+
+    <style>
+        /* ============================================================
+           RAVAGERS' REEF MAP
+           Standalone page that reuses the world-map's v3 engine. We
+           set window.WM_MAP_CONFIG below so world-map-v3.js renders
+           THIS page's islands instead of the world-map set, while
+           Map States panel / drag mode / per-island configs all work
+           identically. localStorage is namespaced to `reef-map-v1-*`
+           so reef state doesn't bleed into world-map state.
+           ============================================================ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            /* Mirror the world-map tint vars so per-category CSS rules in
+               v3.js (.wm-island.is-active.cat-reef .wm-tint) have a value
+               to read. Single reef category by default. */
+            --tint-strength: 0;
+            --tint-reef: #dd5be5;
+            --stroke-filter: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0c0a18;
+            color: #fff;
+            font-family: 'Barlow Condensed', system-ui, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Stage = full viewport. */
+        .stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Aspect-locked canvas. Picked 16:9 to match a typical monitor;
+           the reef islands' % positions adapt to the canvas dimensions. */
+        .map-canvas {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+            aspect-ratio: 16 / 9;
+            background:
+                radial-gradient(ellipse at center,
+                    rgba(60, 30, 100, 0.55) 0%,
+                    rgba(25, 12, 50, 0.85) 55%,
+                    rgba(12, 6, 24, 1) 100%);
+        }
+
+        /* The transformable layer — v3.js applies translate+scale here. */
+        .map-content {
+            position: absolute;
+            inset: 0;
+            transform-origin: center center;
+        }
+
+        /* World-map's hidden bg slot; reef page configures BG_FILES to empty,
+           so v3.js hides this element. We keep the node so v3.js can find it. */
+        .map-background {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        /* ---- v3 island wrappers — same shape rules as world-map ---- */
+        .wm-islands { position: absolute; inset: 0; pointer-events: none; }
+        .wm-island {
+            position: absolute;
+            pointer-events: none;
+            isolation: isolate;
+            z-index: 18;
+        }
+        .wm-island img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            pointer-events: auto;
+            -webkit-user-drag: none;
+            transition: opacity 0.25s ease, filter 0.25s ease;
+        }
+        .wm-island .wm-disabled { opacity: 1; }
+        .wm-island .wm-active   { opacity: 0; }
+        .wm-island.is-active .wm-disabled { opacity: 0; }
+        .wm-island.is-active .wm-active   { opacity: 1; }
+
+        .wm-tint {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-color: transparent;
+            opacity: 0;
+            -webkit-mask-size: 100% 100%;
+                    mask-size: 100% 100%;
+            -webkit-mask-repeat: no-repeat;
+                    mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+                    mask-position: center;
+            mix-blend-mode: multiply;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+        /* Reef has a single category 'reef' — paint when active. */
+        .wm-island.is-active.cat-reef .wm-tint {
+            background-color: var(--tint-reef);
+            opacity: var(--tint-strength);
+        }
+
+        /* ============================================================
+           HUD — copied 1:1 from world-map.html so the reef matches the
+           world map's overlay (player profile top-left, resources top-right,
+           Empire Summary + Conquest Guide on the left, Heroes/Buildings
+           bottom-left, Offers + Store right, Summon Hero bottom-right).
+           ============================================================ */
+
+        /* TOP-LEFT: Player profile */
+        .player-profile {
+            position: absolute;
+            top: 1.8%;
+            left: 1.2%;
+            display: flex;
+            align-items: center;
+            gap: 1%;
+            z-index: 50;
+        }
+        .player-avatar {
+            width: clamp(50px, 5.5vw, 80px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 3px solid #dd5be5;
+            overflow: hidden;
+            box-shadow: 0 0 16px rgba(221, 91, 229, 0.6);
+            flex-shrink: 0;
+        }
+        .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .player-info { display: flex; flex-direction: column; gap: 3px; }
+        .player-name {
+            font-size: clamp(12px, 1.2vw, 18px);
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .progress-bar {
+            width: clamp(110px, 11vw, 180px);
+            height: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; width: 60%;
+            background: linear-gradient(90deg, #dd5be5, #ff6bff);
+            border-radius: 3px;
+        }
+        .player-level { display: flex; align-items: baseline; gap: 3px; }
+        .level-label {
+            font-size: clamp(9px, 0.8vw, 12px);
+            font-weight: 700; color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+        .level-num {
+            font-size: clamp(13px, 1.3vw, 18px);
+            font-weight: 900; font-style: italic; color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        /* TOP-RIGHT: Resources (rendered by inventory.js into [data-inventory-hud]) */
+        .resources {
+            position: absolute;
+            top: 2%;
+            right: 1.2%;
+            display: flex;
+            gap: 15px;
+            z-index: 50;
+        }
+        .resource {
+            position: relative;
+            display: flex; align-items: center;
+            height: clamp(22px, 2.2vw, 34px);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 6px;
+            padding-left: clamp(29px, 2.9vw, 44px);
+            padding-right: clamp(8px, 1vw, 12px);
+        }
+        .resource img {
+            position: absolute;
+            left: -6px; top: 50%; transform: translateY(-50%);
+            width: clamp(29px, 2.9vw, 44px);
+            height: clamp(29px, 2.9vw, 44px);
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+        }
+        .resource span {
+            font-size: clamp(14px, 1.4vw, 22px);
+            font-weight: 700; color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        /* HUD Buttons (circular) — same visuals as world-map */
+        .hud-btn {
+            position: absolute;
+            width: clamp(50px, 5vw, 72px);
+            aspect-ratio: 1;
+            background: radial-gradient(circle at 30% 30%, #4a3070, #2a1850);
+            border: 3px solid #dd5be5;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            z-index: 40;
+            transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease, box-shadow 140ms ease;
+        }
+        .hud-btn:hover {
+            transform: scale(1.08);
+            filter: brightness(1.18) saturate(1.1);
+            box-shadow: 0 6px 18px rgba(221, 91, 229, 0.55),
+                        inset 0 2px 4px rgba(255, 255, 255, 0.25);
+        }
+        .hud-btn:active { transform: scale(0.92); filter: brightness(0.85); transition-duration: 70ms; }
+        .hud-btn-large { width: clamp(70px, 7vw, 100px); }
+        .hud-btn-label {
+            font-size: clamp(9px, 0.85vw, 13px);
+            font-weight: 700; color: #fff;
+            text-align: center; line-height: 1.05;
+            padding: 0 4px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+        .hud-btn-large .hud-btn-label { font-size: clamp(11px, 1vw, 15px); }
+
+        /* Button positions (same as world-map) */
+        .btn-back-world      { top: 9%;  left: 1.5%; }
+        .btn-empire-summary  { top: 20%; left: 1.5%; }
+        .btn-conquest-guide  { top: 30%; left: 1.5%; }
+        .btn-buildings       { bottom: 6%; left: 9%; }
+        .btn-offers          { top: 20%; right: 1.5%; }
+        .btn-store           { top: 30%; right: 1.5%; }
+        .btn-summon          { bottom: 6%; right: 1.5%; }
+
+        /* Heroes (large flame icon) */
+        .heroes {
+            position: absolute;
+            bottom: 4%; left: 1.2%;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px;
+            z-index: 40;
+            cursor: pointer;
+            transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+        }
+        .heroes:hover  { transform: scale(1.06); filter: brightness(1.15); }
+        .heroes:active { transform: scale(0.93); filter: brightness(0.85); transition-duration: 70ms; }
+        .heroes img {
+            width: clamp(75px, 8.75vw, 125px);
+            height: clamp(75px, 8.75vw, 125px);
+            object-fit: contain;
+            filter: drop-shadow(0 0 14px rgba(255, 165, 0, 0.7));
+        }
+        .heroes-label {
+            font-size: clamp(10px, 1vw, 14px);
+            font-weight: 700; color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+            margin-top: -20px;
+        }
+
+        /* Back-to-world-map button — top-left, occupies the slot where
+           the player profile lives on the world map. Matches the world
+           map's .player-avatar size + position so the HUD feels visually
+           anchored in the same spot across both maps. */
+        .reef-back-button {
+            position: absolute;
+            top: 1.8%; left: 1.2%;
+            width: clamp(56px, 6vw, 90px);
+            height: clamp(56px, 6vw, 90px);
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            z-index: 55;
+            transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                        filter 140ms ease;
+        }
+        .reef-back-button img {
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+        }
+        .reef-back-button:hover  { transform: scale(1.1); filter: brightness(1.18); }
+        .reef-back-button:active { transform: scale(0.92); filter: brightness(0.85); }
+
+        /* Map title label — sits to the right of the back button, vertically
+           centered with it. Uses the same Megazine Poster italic styling
+           as world-map's .menu-title so it feels of-a-piece with the rest
+           of the project. The left offset matches the back button's right
+           edge + a small gap. */
+        .reef-map-title {
+            position: absolute;
+            top: 1.8%;
+            left: calc(1.2% + clamp(56px, 6vw, 90px) + 12px);
+            height: clamp(56px, 6vw, 90px);
+            display: flex;
+            align-items: center;
+            margin: 0;
+            font-family: 'Megazine Poster', 'Barlow Condensed', sans-serif;
+            font-style: italic;
+            font-weight: 400;
+            font-size: clamp(22px, 2.8vw, 38px);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.85),
+                         0 0 12px rgba(0, 0, 0, 0.5);
+            line-height: 1;
+            pointer-events: none;       /* never blocks clicks under it */
+            z-index: 54;                /* below the back button */
+            white-space: nowrap;
+        }
+
+        /* Zoom controls — bottom-right; same IDs v3.js looks for */
+        .zoom-controls {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(92, 242, 255, 0.3);
+            border-radius: 999px;
+            padding: 6px 12px;
+            z-index: 60;
+        }
+        .zoom-btn {
+            width: 32px; height: 32px;
+            background: rgba(92, 242, 255, 0.15);
+            border: 1px solid rgba(92, 242, 255, 0.45);
+            color: #5cf2ff;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 140ms, transform 140ms;
+        }
+        .zoom-btn:hover  { background: rgba(92, 242, 255, 0.3); transform: scale(1.06); }
+        .zoom-btn:active { transform: scale(0.94); }
+        .zoom-btn.active { background: linear-gradient(135deg, #5cf2ff, #2a8aff); color: #fff; }
+        .zoom-level {
+            min-width: 48px;
+            text-align: center;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .zoom-level.at-max { color: #5cf2ff; }
+    </style>
+</head>
+<body>
+    <div class="stage">
+        <div class="map-canvas" id="mapCanvas" data-zoom="out">
+            <div class="map-content" id="mapContent">
+                <!-- Hidden bg slot. WM_MAP_CONFIG below sets BG_FILES to empty
+                     strings so v3.js's setBackgroundVariant() leaves this
+                     element invisible. The radial gradient on .map-canvas
+                     handles the atmospheric backdrop. -->
+                <img class="map-background" id="wmBg" alt="">
+                <div class="wm-islands" id="wmIslands"></div>
+            </div>
+
+            <!-- Zoom controls (same IDs v3.js queries) -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
+                <span class="zoom-level" id="zoomLevel">1.0×</span>
+                <button class="zoom-btn" id="zoomInBtn"  title="Zoom in">+</button>
+            </div>
+        </div>
+
+        <!-- ============ HUD (same as world-map.html) ============ -->
+
+        <!-- TOP-LEFT: Back to world map + map title.
+             The reef view replaces the world-map's player profile
+             (avatar / name / XP / level) with the back-arrow button —
+             on the reef there's nothing to level up, so the back button
+             owns this slot. The "Ravager's Reef" label sits next to it
+             so the player always knows what map they're on. -->
+        <button class="reef-back-button" onclick="goBackToWorldMap()"
+                aria-label="Back to world map" title="Back to World Map">
+            <img src="../assets/buttons/ui_btn_back.png" alt="">
+        </button>
+        <h1 class="reef-map-title">Ravager's Reef</h1>
+
+        <!-- TOP-RIGHT: Resources (rendered by inventory.js) -->
+        <div class="resources" data-inventory-hud></div>
+
+        <!-- LEFT HUD BUTTONS — Empire Summary + Conquest Guide.
+             openWorldMenu() stashes this page's URL as menu-origin and
+             navigates; world-map's back interceptor returns here on close. -->
+        <div class="hud-btn btn-empire-summary tap-feedback" data-badge-target="empire-summary" data-badge-label="Empire Summary"
+             onclick="openWorldMenu('?menu=empire-summary');">
+            <span class="hud-btn-label">Empire<br>Summary</span>
+            <span class="badge badge-arrow" title="Empire upgrades available">↑</span>
+        </div>
+        <div class="hud-btn btn-conquest-guide tap-feedback" data-badge-target="conquest-guide" data-badge-label="Conquest Guide"
+             onclick="openWorldMenu('?action=conquest');">
+            <span class="hud-btn-label">Conquest<br>Guide</span>
+            <span class="badge badge-dot" title="New conquest activity"></span>
+        </div>
+
+        <!-- BOTTOM LEFT: HEROES + BUILDINGS -->
+        <div class="heroes tap-feedback" onclick="openWorldMenu('?action=army');">
+            <img src="../assets/buttons/Map HUD Button Army.png" alt="Army">
+            <span class="heroes-label">Army</span>
+        </div>
+        <div class="hud-btn btn-buildings tap-feedback" data-badge-target="buildings" data-badge-label="Buildings"
+             onclick="openWorldMenu('?menu=buildings');">
+            <span class="hud-btn-label">Buildings</span>
+            <span class="badge badge-arrow" title="Buildings can be upgraded">↑</span>
+        </div>
+
+        <!-- RIGHT HUD BUTTONS — Offers + Store -->
+        <div class="hud-btn btn-offers tap-feedback" data-badge-target="offers" data-badge-label="Offers"
+             onclick="openWorldMenu('?menu=offers');">
+            <span class="hud-btn-label">Offers</span>
+            <span class="badge badge-new" title="New offers available">NEW</span>
+        </div>
+        <div class="hud-btn btn-store tap-feedback" data-badge-target="store" data-badge-label="Store"
+             onclick="openWorldMenu('?menu=store');">
+            <span class="hud-btn-label">Store</span>
+            <span class="badge badge-dot" title="Store update"></span>
+        </div>
+
+        <!-- BOTTOM RIGHT: SUMMON HERO -->
+        <div class="hud-btn hud-btn-large btn-summon tap-feedback" data-badge-target="summon" data-badge-label="Summon Hero"
+             onclick="openWorldMenu('?action=summon');">
+            <span class="hud-btn-label">Summon<br>Hero</span>
+            <span class="badge badge-dot" title="Summon available"></span>
+        </div>
+
+        <!-- SVG defs for the per-category stroke filters that v3.js creates -->
+        <svg class="wm-svg-defs" aria-hidden="true" style="position:absolute;width:0;height:0;">
+            <defs></defs>
+        </svg>
+    </div>
+
+    <script>
+        // ---- Reef map configuration ---------------------------------
+        // Set BEFORE world-map-v3.js loads so it picks these up instead
+        // of the world-map defaults.
+        window.WM_MAP_CONFIG = {
+            // Storage namespace — keeps reef state isolated from world map
+            // (per-island configs, active set, global scales all separate).
+            storagePrefix: 'reef-map-v1-',
+
+            // Same asset directory the world map uses.
+            assetDir: '../assets/map%20islands/',
+
+            // Empty bg — the .map-canvas radial gradient is the backdrop.
+            // v3.js's setBackgroundVariant() hides #wmBg when these are blank.
+            bgFiles: { active: '', disabled: '' },
+
+            // The 9 reef rocks I extracted from Ravager's Reef Islands.png.
+            // Positions are % of the .map-canvas (16:9); designed to roughly
+            // match the original composition (biggest at center, scatter
+            // around). Same disabled/active source so there's no greyscale
+            // version — the .is-active toggle is a designer concept here.
+            islands: [
+                { key: 'reef1', label: 'Reef 1', active: 'Island_Ravagers_01.png', disabled: 'Island_Ravagers_01.png', x: 72, y:  8, w: 10, h: 22 },
+                { key: 'reef2', label: 'Reef 2', active: 'Island_Ravagers_02.png', disabled: 'Island_Ravagers_02.png', x: 20, y:  8, w: 14, h: 26 },
+                { key: 'reef3', label: 'Reef 3', active: 'Island_Ravagers_03.png', disabled: 'Island_Ravagers_03.png', x: 84, y: 22, w: 11, h: 22 },
+                { key: 'reef4', label: 'Reef 4', active: 'Island_Ravagers_04.png', disabled: 'Island_Ravagers_04.png', x: 41, y: 38, w: 18, h: 26 },
+                { key: 'reef5', label: 'Reef 5', active: 'Island_Ravagers_05.png', disabled: 'Island_Ravagers_05.png', x:  4, y: 46, w: 18, h: 22 },
+                { key: 'reef6', label: 'Reef 6', active: 'Island_Ravagers_06.png', disabled: 'Island_Ravagers_06.png', x: 80, y: 50, w: 11, h: 22 },
+                { key: 'reef7', label: 'Reef 7', active: 'Island_Ravagers_07.png', disabled: 'Island_Ravagers_07.png', x: 41, y: 70, w: 15, h: 26 },
+                { key: 'reef8', label: 'Reef 8', active: 'Island_Ravagers_08.png', disabled: 'Island_Ravagers_08.png', x: 70, y: 70, w: 13, h: 26 },
+                { key: 'reef9', label: 'Reef 9', active: 'Island_Ravagers_09.png', disabled: 'Island_Ravagers_09.png', x: 20, y: 72, w: 10, h: 22 },
+            ],
+
+            // All 9 active by default. User can toggle via Map States panel.
+            defaultActive: ['reef1','reef2','reef3','reef4','reef5','reef6','reef7','reef8','reef9'],
+
+            // Single category for all reef rocks. Stroke/tint per-category
+            // controls in the debug panel will show one "Reef" row.
+            categories: [
+                { id: 'reef', label: 'Reef', keys: ['reef1','reef2','reef3','reef4','reef5','reef6','reef7','reef8','reef9'], defaultColor: '#dd5be5' },
+            ],
+
+            // No popup wired by default — reef island taps are no-ops.
+            // Add entries here if you want a specific rock to open a popup.
+            propClick: {},
+
+            // No pre-seeded prop/banner/label/badge values. Each rock starts
+            // blank — designer adds via the Per-Island Elements debug panel.
+            seedConfigs: {},
+        };
+
+        // Back to the world map.
+        function goBackToWorldMap() {
+            window.location.href = 'world-map.html';
+        }
+
+        // Cross-page menu launcher: stashes THIS page's URL so when the
+        // user closes the menu on world-map, the universal back handler
+        // there returns them here instead of stranding them on the world
+        // map. The session key auto-clears once the menu Back is tapped.
+        function openWorldMenu(qs) {
+            try { sessionStorage.setItem('menu-origin', location.href); } catch (_) {}
+            window.location.href = 'world-map.html' + qs;
+        }
+    </script>
+
+    <!-- Same scripts the world map loads. inventory.js renders the resource
+         pills; v3.js renders the islands using WM_MAP_CONFIG above;
+         map-states-debug.js mounts the Map States panel (press M). -->
+    <script src="inventory.js?v=1"></script>
+    <!-- Notification debug panel (🐞 toggle, D key) — matches world map. -->
+    <script src="debug-panel.js?v=1"></script>
+    <!-- Map States debug panel (🗺️ toggle, M key) — the editor menu. -->
+    <script src="map-states-debug.js?v=21"></script>
+    <!-- Renders the 9 reef islands from WM_MAP_CONFIG above. -->
+    <script src="world-map-v3.js?v=21"></script>
+</body>
+</html>
