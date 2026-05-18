@@ -239,9 +239,10 @@
       prop:        { type: 'tower-flag',   x: 50, y: 50, scale: 100 },
       banner:      { types: ['pvp'], x: 50, y: -10, scale: 100, gap: 4 },
       islandName:  { show: true, text: 'RAVAGERS REEF', x: 50, y: 110, scale: 100 },
-      // Energy cost = 1 attempt to tap into the reef. Icon 'energy' resolves
-      // to resource_energy.png — the battery glyph the world-map cost pills use.
-      resourceReq: { show: true, text: '1', icon: 'energy', x: 50, y: 125, scale: 100 },
+      // Energy cost — '22/1' = 22 energy in inventory, 1 needed per entry.
+      // Icon 'energy' resolves to resource_energy.png (the battery glyph
+      // the world-map cost pills use).
+      resourceReq: { show: true, text: '22/1', icon: 'energy', x: 50, y: 125, scale: 100 },
     },
     expedition: {
       prop:        { type: 'tower', x: 50, y: 52, scale: 100 },
@@ -524,10 +525,13 @@
   // preserving any value they explicitly picked.
   (function migrateStoredConfigs() {
     let dirty = false;
-    // 2026-05: Ravagers Reef resource requirement label '24/24' → '1'.
+    // 2026-05: Ravagers Reef resource requirement label evolved from
+    // '24/24' → '1' → '22/1'. Migrate any stored value still on a prior
+    // default; leave custom user values alone.
     const rav = storedConfigs.ravagers;
-    if (rav && rav.resourceReq && rav.resourceReq.text === '24/24') {
-      rav.resourceReq.text = '1';
+    const OLD_REEF_DEFAULTS = new Set(['24/24', '1']);
+    if (rav && rav.resourceReq && OLD_REEF_DEFAULTS.has(rav.resourceReq.text)) {
+      rav.resourceReq.text = '22/1';
       dirty = true;
     }
     if (dirty) {
