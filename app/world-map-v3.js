@@ -274,6 +274,11 @@
     expedition: (anchor) => window.openPopup && window.openPopup('pvp-expedition', anchor),
     ravagers:   (anchor) => window.openPopup && window.openPopup('pvp-ravagers', anchor),
     pve:        (anchor) => window.openPopup && window.openPopup('pve', anchor),
+    // All three PVP islands open the same #popup-pvp — leaderboard +
+    // rewards + ENTER, identical structure to the Ravagers' Reef popup.
+    pvp1:       (anchor) => window.openPopup && window.openPopup('pvp', anchor),
+    pvp2:       (anchor) => window.openPopup && window.openPopup('pvp', anchor),
+    pvp3:       (anchor) => window.openPopup && window.openPopup('pvp', anchor),
   };
 
   // Zoom config — defaults; mutable at runtime via the WorldMapV2 API.

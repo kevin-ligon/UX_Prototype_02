@@ -2975,7 +2975,7 @@
            visible frame chrome below the action button. The 828 denominator
            is +48 over the previous 780 to extend the background further down
            below the ENTER button (matches the value at 620px width). */
-        #popup-pvp-ravagers .popup {
+        .popup-pvp-leaderboard .popup {
             width: min(620px, 90vw);
             aspect-ratio: 621 / 828;
         }
@@ -2984,7 +2984,7 @@
            the same spot relative to the frame ornaments (instead of the
            default tucked-into-corner position). Numbers come from
            #popup-empire .popup-close. */
-        #popup-pvp-ravagers .popup-close {
+        .popup-pvp-leaderboard .popup-close {
             top:   calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
             right: calc(clamp(40px, 4.5vw, 64px) * -0.75 - 30px);
         }
@@ -2992,18 +2992,18 @@
         /* Push the inner content area's bottom inset in so the ENTER button
            lifts off the frame edge — leaves visible popup background below
            the action, matching the Empire popup feel. */
-        #popup-pvp-ravagers .feature-popup-inner {
+        .popup-pvp-leaderboard .feature-popup-inner {
             inset: 5% 6% 12% 6%;
         }
 
         /* ----- Header row: territory title + players-count pill ----- */
-        #popup-pvp-ravagers .reef-title-row {
+        .popup-pvp-leaderboard .reef-title-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
         }
-        #popup-pvp-ravagers .reef-players-count {
+        .popup-pvp-leaderboard .reef-players-count {
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -3019,7 +3019,7 @@
                the title row's flex layout intact. */
             transform: translateY(48px);
         }
-        #popup-pvp-ravagers .reef-players-count img {
+        .popup-pvp-leaderboard .reef-players-count img {
             width: clamp(20px, 2vw, 28px);
             height: auto;
             object-fit: contain;
@@ -3027,12 +3027,12 @@
         }
 
         /* ----- Leaderboard rows ----- */
-        #popup-pvp-ravagers .reef-leaderboard {
+        .popup-pvp-leaderboard .reef-leaderboard {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-        #popup-pvp-ravagers .reef-row {
+        .popup-pvp-leaderboard .reef-row {
             position: relative;
             display: flex;
             align-items: center;
@@ -3045,22 +3045,22 @@
             color: #b2b2b2;
             text-transform: uppercase;
         }
-        #popup-pvp-ravagers .reef-row .reef-rank {
+        .popup-pvp-leaderboard .reef-row .reef-rank {
             min-width: 28px;
             font-size: clamp(16px, 1.7vw, 22px);
         }
-        #popup-pvp-ravagers .reef-row .reef-name {
+        .popup-pvp-leaderboard .reef-row .reef-name {
             flex: 1;
             font-size: clamp(16px, 1.7vw, 22px);
             letter-spacing: 0.5px;
         }
-        #popup-pvp-ravagers .reef-row .reef-trophy {
+        .popup-pvp-leaderboard .reef-row .reef-trophy {
             width: clamp(18px, 1.8vw, 24px);
             height: auto;
             object-fit: contain;
             filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
         }
-        #popup-pvp-ravagers .reef-row .reef-score {
+        .popup-pvp-leaderboard .reef-row .reef-score {
             font-size: clamp(16px, 1.7vw, 22px);
             color: #fffbe4;
         }
@@ -3069,7 +3069,7 @@
            The 9-slice border-image draws frame_highlight.png around the row;
            override wins against the .nslice-bg-stat utility on the same node
            because of higher specificity (#popup id + .is-player class). */
-        #popup-pvp-ravagers .reef-row.is-player {
+        .popup-pvp-leaderboard .reef-row.is-player {
             color: #ffffff;
             padding: 10px 14px;
             min-height: clamp(48px, 5.5vw, 64px);
@@ -3080,25 +3080,25 @@
             border-image-repeat: stretch;
             background: transparent;
         }
-        #popup-pvp-ravagers .reef-row.is-player .reef-rank,
-        #popup-pvp-ravagers .reef-row.is-player .reef-name,
-        #popup-pvp-ravagers .reef-row.is-player .reef-score {
+        .popup-pvp-leaderboard .reef-row.is-player .reef-rank,
+        .popup-pvp-leaderboard .reef-row.is-player .reef-name,
+        .popup-pvp-leaderboard .reef-row.is-player .reef-score {
             font-size: clamp(20px, 2.2vw, 28px);
             font-weight: 900;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
         }
-        #popup-pvp-ravagers .reef-row.is-player .reef-score {
+        .popup-pvp-leaderboard .reef-row.is-player .reef-score {
             color: #fffbe4;
         }
-        #popup-pvp-ravagers .reef-row.is-player .reef-stat-arrow {
+        .popup-pvp-leaderboard .reef-row.is-player .reef-stat-arrow {
             width: clamp(20px, 2vw, 26px);
             height: auto;
             object-fit: contain;
         }
     </style>
 
-    <div class="popup-overlay" id="popup-pvp-ravagers" onclick="if(event.target===this)closePopup()">
+    <div class="popup-overlay popup-pvp-leaderboard" id="popup-pvp-ravagers" onclick="if(event.target===this)closePopup()">
         <div class="popup nslice-popup-dark">
             <button class="popup-close" onclick="closePopup()" aria-label="Close">
                 <img src="../assets/buttons/ui_btn_close.png" alt="">
@@ -3196,6 +3196,194 @@
                         </div>
                         <button class="popup-btn nslice-btn-cyan" data-cost='{"fuel": 1}'
                                 onclick="closePopup(); window.location.href='ravagers-reef-map.html';">
+                            <span class="popup-btn-label">Enter</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         POPUP: EXPEDITION (PvP leaderboard island)
+         Same structure + styling as Ravagers' Reef (shares
+         .popup-pvp-leaderboard CSS). Title swapped to EXPEDITION; ENTER
+         is a placeholder (just closes the popup) until an expedition
+         map is built. Opened by tapping the Expedition tower via
+         PROP_CLICK.expedition → openPopup('pvp-expedition').
+         ================================================================ -->
+    <div class="popup-overlay popup-pvp-leaderboard" id="popup-pvp-expedition" onclick="if(event.target===this)closePopup()">
+        <div class="popup nslice-popup-dark">
+            <button class="popup-close" onclick="closePopup()" aria-label="Close">
+                <img src="../assets/buttons/ui_btn_close.png" alt="">
+            </button>
+
+            <div class="feature-popup-inner">
+                <div class="reef-title-row">
+                    <h2 class="feature-popup-title">EXPEDITION</h2>
+                    <span class="reef-players-count" aria-label="12 players competing">
+                        <img src="../assets/ui-elements/Map%20Icon%20Players.png" alt="">
+                        <span>12</span>
+                    </span>
+                </div>
+
+                <section class="feature-section">
+                    <span class="feature-section-label">Leaderboard</span>
+                    <div class="reef-leaderboard nslice-bg-list" style="padding: 8px;">
+                        <div class="reef-row">
+                            <span class="reef-rank">4.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">45</span>
+                        </div>
+                        <div class="reef-row is-player nslice-bg-stat">
+                            <span class="reef-rank">5.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">50</span>
+                            <img class="reef-stat-arrow" src="../assets/icons/ui_icon_stat_increase.png" alt="">
+                        </div>
+                        <div class="reef-row">
+                            <span class="reef-rank">6.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">55</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="feature-section">
+                    <span class="feature-section-label">Potential Rewards</span>
+                    <div class="reward-strip">
+                        <div class="reward-grid">
+                            <div class="reward-card" data-rarity="uncommon">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_fuel.png" alt="Fuel">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_gold.png" alt="Gold">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_steel.png" alt="Steel">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="epic">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_meteorite.png" alt="Meteorite">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="popup-actions" style="margin-top: auto;">
+                    <div class="popup-action">
+                        <div class="cost-capsule nslice-bg-list">
+                            <span class="cost-item" data-cost-resource="fuel" data-cost-amount="1">
+                                <img src="../assets/icons/resource_energy.png" alt="" class="cost-icon">
+                                <span class="cost-amount">1</span>
+                            </span>
+                        </div>
+                        <button class="popup-btn nslice-btn-cyan" data-cost='{"fuel": 1}'
+                                onclick="closePopup();">
+                            <span class="popup-btn-label">Enter</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         POPUP: PVP (shared by pvp1, pvp2, pvp3 islands)
+         Same structure + styling as Ravagers' Reef (shares
+         .popup-pvp-leaderboard CSS). Title is PVP; ENTER is a
+         placeholder (just closes the popup) until a PVP map is built.
+         Opened by tapping any PVP island via PROP_CLICK.pvp1/2/3
+         → openPopup('pvp').
+         ================================================================ -->
+    <div class="popup-overlay popup-pvp-leaderboard" id="popup-pvp" onclick="if(event.target===this)closePopup()">
+        <div class="popup nslice-popup-dark">
+            <button class="popup-close" onclick="closePopup()" aria-label="Close">
+                <img src="../assets/buttons/ui_btn_close.png" alt="">
+            </button>
+
+            <div class="feature-popup-inner">
+                <div class="reef-title-row">
+                    <h2 class="feature-popup-title">PVP</h2>
+                    <span class="reef-players-count" aria-label="12 players competing">
+                        <img src="../assets/ui-elements/Map%20Icon%20Players.png" alt="">
+                        <span>12</span>
+                    </span>
+                </div>
+
+                <section class="feature-section">
+                    <span class="feature-section-label">Leaderboard</span>
+                    <div class="reef-leaderboard nslice-bg-list" style="padding: 8px;">
+                        <div class="reef-row">
+                            <span class="reef-rank">4.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">45</span>
+                        </div>
+                        <div class="reef-row is-player nslice-bg-stat">
+                            <span class="reef-rank">5.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">50</span>
+                            <img class="reef-stat-arrow" src="../assets/icons/ui_icon_stat_increase.png" alt="">
+                        </div>
+                        <div class="reef-row">
+                            <span class="reef-rank">6.</span>
+                            <span class="reef-name">Players Name</span>
+                            <img class="reef-trophy" src="../assets/icons/ui_icon_pvp_trophy.png" alt="">
+                            <span class="reef-score">55</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="feature-section">
+                    <span class="feature-section-label">Potential Rewards</span>
+                    <div class="reward-strip">
+                        <div class="reward-grid">
+                            <div class="reward-card" data-rarity="uncommon">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_fuel.png" alt="Fuel">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_gold.png" alt="Gold">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="rare">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_steel.png" alt="Steel">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                            <div class="reward-card" data-rarity="epic">
+                                <img class="reward-icon" src="../assets/icons/ui_currency_meteorite.png" alt="Meteorite">
+                                <div class="reward-bonus-strip"><span class="reward-bonus">+100k</span></div>
+                                <span class="reward-count">x11</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="popup-actions" style="margin-top: auto;">
+                    <div class="popup-action">
+                        <div class="cost-capsule nslice-bg-list">
+                            <span class="cost-item" data-cost-resource="fuel" data-cost-amount="1">
+                                <img src="../assets/icons/resource_energy.png" alt="" class="cost-icon">
+                                <span class="cost-amount">1</span>
+                            </span>
+                        </div>
+                        <button class="popup-btn nslice-btn-cyan" data-cost='{"fuel": 1}'
+                                onclick="closePopup();">
                             <span class="popup-btn-label">Enter</span>
                         </button>
                     </div>
@@ -4736,8 +4924,8 @@
     </svg>
     <!-- Cache-buster (?v=...) — bump the number whenever you change the file
          to force the browser to fetch the new version instead of a stale copy. -->
-    <script src="map-states-debug.js?v=23"></script>
-    <script src="world-map-v3.js?v=23"></script>
+    <script src="map-states-debug.js?v=24"></script>
+    <script src="world-map-v3.js?v=24"></script>
 
     <!-- ============================================================
          URL-param dispatcher
